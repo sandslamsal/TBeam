@@ -24,9 +24,9 @@ export function deriveSectionGeometry(state, reinforcement) {
     cover,
     d: effectiveDepth,
     dPrime: reinforcement.compressionCentroid,
+    tensionCentroid: reinforcement.effectiveDepthAuto,
     grossArea: bf * hf + bw * (rawH - hf),
     beta1: getBeta1(Number(state.materials.fc) || 0),
     manualEffectiveDepth
   };
 }
-

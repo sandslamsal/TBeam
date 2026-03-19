@@ -5,6 +5,9 @@ export const DEFAULT_STATE = {
     name: "TBeam Trial Design",
     designer: "Bridge Structures Group",
     date: new Date().toISOString().slice(0, 10),
+    companyName: "Bridge Structures Group",
+    companyLogoDataUrl: "",
+    companyLogoFilename: "",
     notes: "Cast-in-place bridge T-beam capacity study."
   },
   geometry: {
@@ -13,7 +16,6 @@ export const DEFAULT_STATE = {
     bw: 14,
     h: 44,
     cover: 2.5,
-    layerSpacing: 2,
     manualEffectiveDepth: false,
     effectiveDepthOverride: 40
   },
@@ -23,12 +25,15 @@ export const DEFAULT_STATE = {
     es: 29000
   },
   reinforcement: {
-    tensionBarSize: "#9",
-    tensionBarCount: 8,
-    tensionLayers: 2,
-    compressionEnabled: true,
-    compressionBarSize: "#6",
-    compressionBarCount: 2,
+    bottomLayerSpacing: 2,
+    topLayerSpacing: 2,
+    bottomLayers: [
+      { barSize: "#9", barCount: 4 },
+      { barSize: "#9", barCount: 4 }
+    ],
+    topLayers: [
+      { barSize: "#6", barCount: 2 }
+    ],
     stirrupBarSize: "#4",
     stirrupLegs: 2,
     stirrupSpacing: 8,
@@ -36,4 +41,3 @@ export const DEFAULT_STATE = {
     shearThetaDeg: 34
   }
 };
-

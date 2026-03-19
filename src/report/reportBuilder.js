@@ -2,7 +2,7 @@ import { renderFlexureDrawing } from "../drawings/flexureDrawing.js";
 import { renderSectionDrawing } from "../drawings/sectionDrawing.js";
 import { renderShearDrawing } from "../drawings/shearDrawing.js";
 import { equationBlock } from "../ui/math.js";
-import { escapeHtml, formatNumber } from "../utils/format.js";
+import { downloadTextFile, escapeHtml, formatNumber, slugify } from "../utils/format.js";
 
 function tableRows(items) {
   return items
@@ -15,6 +15,29 @@ function tableRows(items) {
       `
     )
     .join("");
+}
+
+function renderValuesTable(values = []) {
+  if (!values.length) {
+    return "";
+  }
+
+  return `
+    <table class="report-value-table">
+      <tbody>
+        ${values
+          .map(
+            ([label, value]) => `
+              <tr>
+                <th>${escapeHtml(label)}</th>
+                <td>${escapeHtml(value)}</td>
+              </tr>
+            `
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
 }
 
 function renderStepTable(title, steps) {
@@ -30,8 +53,10 @@ function renderStepTable(title, steps) {
             (step) => `
               <article class="report-step">
                 <h3>${escapeHtml(step.title)}</h3>
-                ${equationBlock(step.equation)}
-                ${equationBlock(step.detail)}
+                ${step.narrative ? `<p class="report-step__narrative">${escapeHtml(step.narrative)}</p>` : ""}
+                ${(step.equations || []).map((equation) => equationBlock(equation)).join("")}
+                ${(step.substitutions || []).map((equation) => equationBlock(equation)).join("")}
+                ${renderValuesTable(step.values)}
               </article>
             `
           )
@@ -41,13 +66,25 @@ function renderStepTable(title, steps) {
   `;
 }
 
-function buildReportHtml(snapshot, autoPrint) {
+function layerScheduleRows(layers, familyLabel) {
+  if (!layers.length) {
+    return [[`${familyLabel} layers`, "None"]];
+  }
+
+  return layers.map((layer) => [
+    `${familyLabel} L${layer.index + 1}`,
+    `${layer.barCount} ${layer.barSize} | area ${formatNumber(layer.area, 2)} in^2 | y = ${formatNumber(layer.depth, 2)} in`
+  ]);
+}
+
+export function buildReportHtml(snapshot, autoPrint = false) {
   const geometryRows = [
     ["Flange width bf", `${formatNumber(snapshot.geometry.bf, 2)} in`],
     ["Flange thickness hf", `${formatNumber(snapshot.geometry.hf, 2)} in`],
     ["Web width bw", `${formatNumber(snapshot.geometry.bw, 2)} in`],
     ["Overall depth h", `${formatNumber(snapshot.geometry.h, 2)} in`],
     ["Effective depth d", `${formatNumber(snapshot.geometry.d, 2)} in`],
+    ["Top steel depth d'", `${formatNumber(snapshot.geometry.dPrime, 2)} in`],
     ["Neutral axis c", `${formatNumber(snapshot.flexure.c, 2)} in`],
     ["Compression block a", `${formatNumber(snapshot.flexure.a, 2)} in`]
   ];
@@ -59,37 +96,33 @@ function buildReportHtml(snapshot, autoPrint) {
   ];
 
   const reinforcementRows = [
-    [
-      "Tension reinforcement",
-      `${snapshot.state.reinforcement.tensionBarCount} ${snapshot.state.reinforcement.tensionBarSize} bars`
-    ],
-    ["Tension steel area As", `${formatNumber(snapshot.reinforcement.tensionArea, 2)} in^2`],
-    [
-      "Compression reinforcement",
-      snapshot.state.reinforcement.compressionEnabled
-        ? `${snapshot.state.reinforcement.compressionBarCount} ${snapshot.state.reinforcement.compressionBarSize} bars`
-        : "Not provided"
-    ],
-    ["Compression steel area As'", `${formatNumber(snapshot.reinforcement.compressionArea, 2)} in^2`],
+    ["Bottom steel area As", `${formatNumber(snapshot.reinforcement.tensionArea, 2)} in^2`],
+    ["Top steel area As'", `${formatNumber(snapshot.reinforcement.compressionArea, 2)} in^2`],
+    ["Transverse steel area Av", `${formatNumber(snapshot.reinforcement.shearArea, 2)} in^2`],
     [
       "Stirrups",
       `${snapshot.state.reinforcement.stirrupLegs} legs of ${snapshot.state.reinforcement.stirrupBarSize} @ ${formatNumber(
         snapshot.state.reinforcement.stirrupSpacing,
         1
       )} in`
-    ],
-    ["Transverse steel area Av", `${formatNumber(snapshot.reinforcement.shearArea, 2)} in^2`]
+    ]
   ];
 
   const summaryRows = [
     ["Compression block behavior", snapshot.flexure.sectionCase === "flange" ? "Within flange" : "Extends into web"],
-    ["Nominal moment Mn", `${formatNumber(snapshot.flexure.mnKipFt, 1)} k-ft`],
-    ["Design moment phi Mn", `${formatNumber(snapshot.flexure.phiMnKipFt, 1)} k-ft`],
-    ["Concrete shear Vc", `${formatNumber(snapshot.shear.vc, 1)} k`],
-    ["Stirrup shear Vs", `${formatNumber(snapshot.shear.vs, 1)} k`],
-    ["Nominal shear Vn", `${formatNumber(snapshot.shear.vn, 1)} k`],
-    ["Design shear phi Vn", `${formatNumber(snapshot.shear.phiVn, 1)} k`]
+    ["Nominal moment Mn", `${formatNumber(snapshot.flexure.mnKipFt, 2)} k-ft`],
+    ["Design moment phiMn", `${formatNumber(snapshot.flexure.phiMnKipFt, 2)} k-ft`],
+    ["Concrete shear Vc", `${formatNumber(snapshot.shear.vc, 2)} k`],
+    ["Stirrup shear Vs", `${formatNumber(snapshot.shear.vs, 2)} k`],
+    ["Nominal shear Vn", `${formatNumber(snapshot.shear.vn, 2)} k`],
+    ["Design shear phiVn", `${formatNumber(snapshot.shear.phiVn, 2)} k`]
   ];
+
+  const logoMarkup = snapshot.state.project.companyLogoDataUrl
+    ? `<div class="report-logo"><img src="${snapshot.state.project.companyLogoDataUrl}" alt="Company logo"></div>`
+    : `<div class="report-logo report-logo--placeholder">${escapeHtml(
+        snapshot.state.project.companyName || snapshot.state.project.designer || "Engineering"
+      )}</div>`;
 
   return `
     <!DOCTYPE html>
@@ -120,24 +153,35 @@ function buildReportHtml(snapshot, autoPrint) {
           background: linear-gradient(180deg, #f4ede2 0%, #fffdfa 40%, #f3f6f8 100%);
         }
         .report-shell {
-          max-width: 1100px;
+          max-width: 1180px;
           margin: 0 auto;
-          padding: 36px;
+          padding: 32px;
         }
         .report-hero {
-          padding: 28px 30px;
+          display: grid;
+          grid-template-columns: 180px minmax(0, 1fr);
+          gap: 22px;
+          padding: 24px 28px;
           border: 1px solid var(--line);
           border-radius: 24px;
           background: var(--paper);
         }
-        .report-hero h1,
-        h2,
-        h3 {
-          font-family: "Fraunces", serif;
+        .report-logo {
+          height: 108px;
+          border: 1px solid var(--line);
+          border-radius: 18px;
+          display: grid;
+          place-items: center;
+          background: #fff;
+          overflow: hidden;
+          font: 600 0.98rem "IBM Plex Sans", sans-serif;
+          color: var(--muted);
         }
-        .report-hero h1 {
-          margin: 0 0 8px;
-          font-size: 2.5rem;
+        .report-logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          padding: 14px;
         }
         .report-kicker {
           margin: 0 0 8px;
@@ -146,6 +190,33 @@ function buildReportHtml(snapshot, autoPrint) {
           letter-spacing: 0.16em;
           font-size: 0.72rem;
           font-weight: 700;
+        }
+        .report-hero h1,
+        h2,
+        h3 {
+          font-family: "Fraunces", serif;
+        }
+        .report-hero h1 {
+          margin: 0 0 10px;
+          font-size: 2.45rem;
+        }
+        .report-title-block {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px 18px;
+          margin-top: 18px;
+          padding-top: 18px;
+          border-top: 1px solid var(--line);
+        }
+        .report-title-block div {
+          display: grid;
+          gap: 4px;
+        }
+        .report-title-block span {
+          color: var(--muted);
+          font-size: 0.82rem;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
         }
         .report-grid {
           display: grid;
@@ -173,13 +244,17 @@ function buildReportHtml(snapshot, autoPrint) {
           vertical-align: top;
         }
         th {
-          width: 45%;
+          width: 42%;
           color: var(--muted);
           font-weight: 600;
         }
+        .report-layer-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 18px;
+        }
         .report-drawing-grid {
           display: grid;
-          grid-template-columns: 1fr;
           gap: 18px;
         }
         .report-step-stack {
@@ -196,6 +271,14 @@ function buildReportHtml(snapshot, autoPrint) {
           margin: 0 0 10px;
           font-size: 1.05rem;
         }
+        .report-step__narrative {
+          margin: 0 0 12px;
+          color: var(--muted);
+          line-height: 1.55;
+        }
+        .report-value-table th {
+          width: 32%;
+        }
         .equation-block {
           margin: 8px 0;
           padding: 12px 14px;
@@ -204,29 +287,29 @@ function buildReportHtml(snapshot, autoPrint) {
           overflow-x: auto;
         }
         @media print {
-          body {
-            background: white;
-          }
-          .report-shell {
-            padding: 0;
-          }
+          body { background: white; }
+          .report-shell { padding: 0; }
           .report-card,
           .report-section,
-          .report-hero {
-            break-inside: avoid;
-            box-shadow: none;
-          }
+          .report-hero { break-inside: avoid; box-shadow: none; }
         }
       </style>
     </head>
     <body>
       <main class="report-shell">
         <header class="report-hero">
-          <p class="report-kicker">Cast-in-Place Reinforced Concrete T-Beam Design Report</p>
-          <h1>${escapeHtml(snapshot.state.project.name || "TBeam Design Package")}</h1>
-          <p>Prepared for ${escapeHtml(snapshot.state.project.designer || "Design Team")} on ${escapeHtml(
-            snapshot.state.project.date || ""
-          )}. This report summarizes flexural and shear capacity per AASHTO LRFD Bridge Design Specifications, 9th Edition.</p>
+          ${logoMarkup}
+          <div>
+            <p class="report-kicker">Cast-in-Place Reinforced Concrete T-Beam Design Report</p>
+            <h1>${escapeHtml(snapshot.state.project.name || "TBeam Design Package")}</h1>
+            <p>This report summarizes flexural and shear capacity calculations per AASHTO LRFD Bridge Design Specifications, 9th Edition.</p>
+            <div class="report-title-block">
+              <div><span>Designer</span><strong>${escapeHtml(snapshot.state.project.designer || "Not provided")}</strong></div>
+              <div><span>Company</span><strong>${escapeHtml(snapshot.state.project.companyName || "Not provided")}</strong></div>
+              <div><span>Date</span><strong>${escapeHtml(snapshot.state.project.date || "")}</strong></div>
+              <div><span>Section</span><strong>T-Beam Flexure and Shear Capacity</strong></div>
+            </div>
+          </div>
         </header>
 
         <section class="report-grid">
@@ -247,7 +330,7 @@ function buildReportHtml(snapshot, autoPrint) {
           <article class="report-card">
             <div class="report-section__header">
               <p class="report-kicker">Reinforcement</p>
-              <h2>Steel Layout</h2>
+              <h2>Steel Summary</h2>
             </div>
             <table>${tableRows(reinforcementRows)}</table>
           </article>
@@ -258,6 +341,21 @@ function buildReportHtml(snapshot, autoPrint) {
             </div>
             <table>${tableRows(summaryRows)}</table>
           </article>
+        </section>
+
+        <section class="report-section">
+          <div class="report-section__header">
+            <p class="report-kicker">Layer Schedule</p>
+            <h2>Top and Bottom Reinforcement Layout</h2>
+          </div>
+          <div class="report-layer-grid">
+            <article class="report-card">
+              <table>${tableRows(layerScheduleRows(snapshot.reinforcement.bottomLayers, "Bottom"))}</table>
+            </article>
+            <article class="report-card">
+              <table>${tableRows(layerScheduleRows(snapshot.reinforcement.topLayers, "Top"))}</table>
+            </article>
+          </div>
         </section>
 
         <section class="report-section">
@@ -297,7 +395,7 @@ function buildReportHtml(snapshot, autoPrint) {
 }
 
 export function openReportWindow(snapshot, autoPrint = false) {
-  const reportWindow = window.open("", "_blank", "noopener,noreferrer");
+  const reportWindow = window.open("about:blank", "_blank");
   if (!reportWindow) {
     return false;
   }
@@ -308,3 +406,7 @@ export function openReportWindow(snapshot, autoPrint = false) {
   return true;
 }
 
+export function downloadReportFile(snapshot) {
+  const fileName = `${slugify(snapshot.state.project.name || "tbeam-report")}.html`;
+  downloadTextFile(fileName, buildReportHtml(snapshot, false), "text/html;charset=utf-8");
+}

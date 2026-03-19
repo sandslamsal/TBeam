@@ -1,43 +1,68 @@
 import { formatNumber } from "../utils/format.js";
 
+function stirrupPath(x, topY, bottomY, hook = 14) {
+  const width = 26;
+  return `
+    <path d="M ${x} ${topY + hook} L ${x} ${bottomY} L ${x + width} ${bottomY} L ${x + width} ${topY + hook} M ${x} ${topY + hook} l 10 -${hook} M ${x + width} ${topY + hook} l -10 -${hook}" class="stirrup-outline" />
+  `;
+}
+
 export function renderShearDrawing(snapshot) {
   const { geometry, reinforcement, shear } = snapshot;
-  const viewWidth = 640;
-  const viewHeight = 350;
-  const originX = 72;
-  const originY = 64;
-  const beamLength = 470;
-  const beamDepth = 170;
-  const stirrupCount = 6;
+  const viewWidth = 860;
+  const viewHeight = 370;
+  const beamX = 76;
+  const beamY = 118;
+  const beamLength = 560;
+  const beamDepth = 150;
+  const cageTop = beamY + 22;
+  const cageBottom = beamY + beamDepth - 22;
+  const stirrupCount = 7;
   const spacingPx = beamLength / (stirrupCount + 1);
-  const crackAngle = shear.thetaDeg;
-  const crackRun = 160;
-  const crackRise = Math.tan((crackAngle * Math.PI) / 180) * crackRun;
   const dvScaled = (shear.dv / geometry.h) * beamDepth;
+  const crackRun = 170;
+  const crackRise = Math.tan((shear.thetaDeg * Math.PI) / 180) * crackRun;
 
   const stirrups = Array.from({ length: stirrupCount }, (_, index) => {
-    const x = originX + spacingPx * (index + 1);
-    return `<rect x="${x - 12}" y="${originY + 16}" width="24" height="${beamDepth - 32}" rx="8" class="stirrup-outline" />`;
+    const x = beamX + spacingPx * (index + 1) - 13;
+    return stirrupPath(x, cageTop, cageBottom);
   }).join("");
 
   return `
-    <svg viewBox="0 0 ${viewWidth} ${viewHeight}" role="img" aria-label="Shear reinforcement diagram">
-      <rect x="18" y="18" width="${viewWidth - 36}" height="${viewHeight - 36}" rx="22" class="drawing-frame" />
-      <text x="42" y="34" class="drawing-title">Shear Reinforcement Diagram</text>
+    <svg viewBox="0 0 ${viewWidth} ${viewHeight}" role="img" aria-label="Beam elevation with shear reinforcement">
+      <defs>
+        <marker id="dimArrowShear" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <path d="M0,5 L10,0 L8,5 L10,10 z" fill="#355168"></path>
+        </marker>
+      </defs>
 
-      <rect x="${originX}" y="${originY}" width="${beamLength}" height="${beamDepth}" rx="18" class="section-outline section-fill" />
+      <rect x="18" y="18" width="${viewWidth - 36}" height="${viewHeight - 36}" rx="24" class="drawing-frame" />
+      <text x="42" y="46" class="drawing-title">Shear Reinforcement Elevation</text>
+      <text x="42" y="70" class="drawing-subtitle">Closed stirrups, longitudinal cage, shear crack inclination, and LRFD shear terms positioned as a beam elevation detail</text>
+
+      <text x="${beamX}" y="98" class="drawing-panel-title">Beam elevation</text>
+      <rect x="${beamX}" y="${beamY}" width="${beamLength}" height="${beamDepth}" class="section-outline section-fill" />
+      <line x1="${beamX + 26}" y1="${cageTop}" x2="${beamX + beamLength - 26}" y2="${cageTop}" class="rebar-line rebar-line--top" />
+      <line x1="${beamX + 26}" y1="${cageBottom}" x2="${beamX + beamLength - 26}" y2="${cageBottom}" class="rebar-line rebar-line--bottom" />
       ${stirrups}
-      <path d="M ${originX + 54} ${originY + beamDepth - 26} L ${originX + 54 + crackRun} ${originY + beamDepth - 26 - crackRise}" class="shear-crack" />
-      <line x1="${originX - 24}" y1="${originY + beamDepth}" x2="${originX - 24}" y2="${originY + beamDepth - dvScaled}" class="effective-depth-line" />
-      <text x="${originX - 38}" y="${originY + beamDepth - dvScaled / 2}" class="drawing-label" transform="rotate(-90 ${originX - 38} ${originY + beamDepth - dvScaled / 2})">dv = ${formatNumber(shear.dv, 2)} in</text>
-      <line x1="${originX + spacingPx}" y1="${originY + beamDepth + 24}" x2="${originX + spacingPx * 2}" y2="${originY + beamDepth + 24}" class="dim-line" />
-      <text x="${originX + spacingPx * 1.5}" y="${originY + beamDepth + 16}" class="dim-text">s = ${formatNumber(snapshot.state.reinforcement.stirrupSpacing, 1)} in</text>
-      <text x="${originX + 248}" y="${originY + 38}" class="drawing-label">Av = ${formatNumber(reinforcement.shearArea, 2)} in²</text>
-      <text x="${originX + 248}" y="${originY + 62}" class="drawing-label">θ = ${formatNumber(shear.thetaDeg, 1)}°</text>
-      <text x="${originX + 248}" y="${originY + 86}" class="drawing-label">β = ${formatNumber(shear.beta, 2)}</text>
-      <text x="${originX + 248}" y="${originY + 110}" class="drawing-label">Vc = ${formatNumber(shear.vc, 1)} k</text>
-      <text x="${originX + 248}" y="${originY + 134}" class="drawing-label">Vs = ${formatNumber(shear.vs, 1)} k</text>
-      <text x="42" y="${viewHeight - 30}" class="drawing-note">Repeated stirrups, diagonal compression field angle, and effective shear depth are shown using the same parameters used in the shear capacity module.</text>
+      <path d="M ${beamX + 72} ${cageBottom - 10} L ${beamX + 72 + crackRun} ${cageBottom - 10 - crackRise}" class="shear-crack" />
+
+      <line x1="${beamX - 34}" y1="${beamY + beamDepth}" x2="${beamX - 34}" y2="${beamY + beamDepth - dvScaled}" class="dim-arrow" marker-start="url(#dimArrowShear)" marker-end="url(#dimArrowShear)" />
+      <text x="${beamX - 18}" y="${beamY + beamDepth - dvScaled / 2}" class="dim-text">dv = ${formatNumber(shear.dv, 2)} in</text>
+
+      <line x1="${beamX + spacingPx}" y1="${beamY - 24}" x2="${beamX + spacingPx * 2}" y2="${beamY - 24}" class="dim-arrow" marker-start="url(#dimArrowShear)" marker-end="url(#dimArrowShear)" />
+      <line x1="${beamX + spacingPx}" y1="${beamY - 8}" x2="${beamX + spacingPx}" y2="${beamY}" class="dim-extension" />
+      <line x1="${beamX + spacingPx * 2}" y1="${beamY - 8}" x2="${beamX + spacingPx * 2}" y2="${beamY}" class="dim-extension" />
+      <text x="${beamX + spacingPx * 1.5 - 18}" y="${beamY - 34}" class="dim-text">s = ${formatNumber(snapshot.state.reinforcement.stirrupSpacing, 1)} in</text>
+
+      <rect x="${beamX + beamLength + 38}" y="${beamY}" width="150" height="${beamDepth}" rx="18" class="info-box" />
+      <text x="${beamX + beamLength + 56}" y="${beamY + 30}" class="drawing-label">Av = ${formatNumber(reinforcement.shearArea, 2)} in²</text>
+      <text x="${beamX + beamLength + 56}" y="${beamY + 56}" class="drawing-label">θ = ${formatNumber(shear.thetaDeg, 1)}°</text>
+      <text x="${beamX + beamLength + 56}" y="${beamY + 82}" class="drawing-label">β = ${formatNumber(shear.beta, 2)}</text>
+      <text x="${beamX + beamLength + 56}" y="${beamY + 108}" class="drawing-label">Vc = ${formatNumber(shear.vc, 1)} k</text>
+      <text x="${beamX + beamLength + 56}" y="${beamY + 134}" class="drawing-label">Vs = ${formatNumber(shear.vs, 1)} k</text>
+
+      <text x="42" y="${viewHeight - 30}" class="drawing-note">The shear elevation uses a realistic RC beam cage with closed stirrups, longitudinal reinforcement lines, spacing callouts, and a diagonal compression-field angle.</text>
     </svg>
   `;
 }

@@ -16,6 +16,8 @@ test("default example computes positive flexural and shear capacity", () => {
   assert.ok(snapshot.flexure.phiMnKipFt > 1000);
   assert.ok(snapshot.shear.phiVn > 150);
   assert.ok(snapshot.flexure.tensionControlled);
+  assert.equal(snapshot.reinforcement.bottomLayers.length, 2);
+  assert.equal(snapshot.reinforcement.topLayers.length, 1);
 });
 
 test("heavy reinforcement forces the compression block into the web", () => {
@@ -25,9 +27,12 @@ test("heavy reinforcement forces the compression block into the web", () => {
   state.geometry.bw = 12;
   state.geometry.h = 40;
   state.materials.fc = 4;
-  state.reinforcement.tensionBarSize = "#14";
-  state.reinforcement.tensionBarCount = 12;
-  state.reinforcement.tensionLayers = 3;
+  state.reinforcement.bottomLayers = [
+    { barSize: "#14", barCount: 4 },
+    { barSize: "#14", barCount: 4 },
+    { barSize: "#14", barCount: 4 }
+  ];
+  state.reinforcement.topLayers = [];
 
   const snapshot = runAnalysis(state);
 
@@ -56,4 +61,28 @@ test("shear resistance respects the AASHTO web crushing limit", () => {
 
   assert.ok(snapshot.shear.controlsLimit);
   assert.equal(Number(snapshot.shear.vn.toFixed(3)), Number(snapshot.shear.vnLimit.toFixed(3)));
+});
+
+test("layer-based reinforcement depths are derived separately for top and bottom rows", () => {
+  const state = cloneState();
+  state.geometry.cover = 2.5;
+  state.geometry.h = 48;
+  state.geometry.bw = 16;
+  state.reinforcement.bottomLayerSpacing = 2;
+  state.reinforcement.topLayerSpacing = 3;
+  state.reinforcement.bottomLayers = [
+    { barSize: "#10", barCount: 4 },
+    { barSize: "#9", barCount: 3 }
+  ];
+  state.reinforcement.topLayers = [
+    { barSize: "#6", barCount: 2 },
+    { barSize: "#5", barCount: 2 }
+  ];
+
+  const snapshot = runAnalysis(state);
+
+  assert.ok(snapshot.reinforcement.bottomLayers[0].depth > snapshot.reinforcement.bottomLayers[1].depth);
+  assert.ok(snapshot.reinforcement.topLayers[0].depth < snapshot.reinforcement.topLayers[1].depth);
+  assert.ok(snapshot.geometry.d > snapshot.geometry.dPrime);
+  assert.ok(snapshot.reinforcement.bottomLayers.every((layer) => layer.xOffsets.every((offset) => Math.abs(offset) <= state.geometry.bw / 2)));
 });

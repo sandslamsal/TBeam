@@ -41,9 +41,9 @@ function numberField(label, path, value, options = {}) {
   `;
 }
 
-function selectField(label, path, value, options, hint = "") {
+function selectField(label, path, value, options, hint = "", wide = false) {
   return `
-    <label class="field">
+    <label class="field ${wide ? "field--wide" : ""}">
       <span>${escapeHtml(label)}</span>
       <select data-path="${path}">
         ${options
@@ -58,9 +58,9 @@ function selectField(label, path, value, options, hint = "") {
   `;
 }
 
-function checkboxField(label, path, checked, hint = "") {
+function checkboxField(label, path, checked, hint = "", wide = false) {
   return `
-    <label class="field field--checkbox">
+    <label class="field field--checkbox ${wide ? "field--wide" : ""}">
       <span>${escapeHtml(label)}</span>
       <input type="checkbox" data-path="${path}" ${checked ? "checked" : ""}>
       ${hint ? `<small>${escapeHtml(hint)}</small>` : ""}
@@ -103,6 +103,27 @@ function messageStack(messages) {
     .join("");
 }
 
+function valueTable(values = []) {
+  if (!values.length) {
+    return "";
+  }
+
+  return `
+    <div class="kv-grid">
+      ${values
+        .map(
+          ([label, value]) => `
+            <div class="kv-row">
+              <span>${escapeHtml(label)}</span>
+              <strong>${escapeHtml(value)}</strong>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function renderStepCards(title, steps) {
   return `
     <section class="step-column">
@@ -116,12 +137,14 @@ function renderStepCards(title, steps) {
         ${steps
           .map(
             (step, index) => `
-              <article class="step-card">
+              <article class="step-card step-card--detail">
                 <div class="step-card__index">0${index + 1}</div>
                 <div class="step-card__body">
                   <h4>${escapeHtml(step.title)}</h4>
-                  ${equationBlock(step.equation)}
-                  ${equationBlock(step.detail)}
+                  ${step.narrative ? `<p class="step-card__narrative">${escapeHtml(step.narrative)}</p>` : ""}
+                  ${(step.equations || []).map((equation) => equationBlock(equation)).join("")}
+                  ${(step.substitutions || []).map((equation) => equationBlock(equation)).join("")}
+                  ${valueTable(step.values)}
                 </div>
               </article>
             `
@@ -146,6 +169,105 @@ function renderPanelSummary(summary, body) {
   `;
 }
 
+function logoUploader(project) {
+  return `
+    <div class="logo-uploader">
+      <div class="logo-preview">
+        ${
+          project.companyLogoDataUrl
+            ? `<img src="${project.companyLogoDataUrl}" alt="Company logo preview">`
+            : `<span>No logo uploaded</span>`
+        }
+      </div>
+      <div class="logo-uploader__controls">
+        <label class="action-button action-button--file">
+          Upload Logo
+          <input type="file" accept="image/*" data-upload="company-logo" hidden>
+        </label>
+        ${
+          project.companyLogoDataUrl
+            ? `<button class="action-button" type="button" data-action="clear-logo">Clear Logo</button>`
+            : ""
+        }
+        <small>PNG or JPG recommended. The report stores a scaled version for stable export.</small>
+      </div>
+    </div>
+  `;
+}
+
+function renderLayerEditor(title, groupKey, layers, spacingPath, spacingValue, layerData, emptyCopy) {
+  return `
+    <section class="layer-editor">
+      <div class="layer-editor__header">
+        <div>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(emptyCopy)}</p>
+        </div>
+        <button class="action-button action-button--small" type="button" data-action="add-layer" data-group="${groupKey}">Add Layer</button>
+      </div>
+      <div class="layer-editor__rows">
+        ${
+          layers.length
+            ? layers
+                .map(
+                  (layer, index) => `
+                    <article class="layer-row">
+                      <div class="layer-row__title">${escapeHtml(groupKey === "bottom" ? `Bottom Layer ${index + 1}` : `Top Layer ${index + 1}`)}</div>
+                      <div class="layer-row__grid">
+                        ${selectField("Bar size", `reinforcement.${groupKey}Layers.${index}.barSize`, layer.barSize, BAR_OPTIONS)}
+                        ${numberField("Bar count", `reinforcement.${groupKey}Layers.${index}.barCount`, layer.barCount, { step: "1", min: "1" })}
+                        <div class="layer-row__derived">
+                          <span>Area</span>
+                          <strong>${formatNumber(layerData[index]?.area || 0, 2)} in²</strong>
+                        </div>
+                        <div class="layer-row__derived">
+                          <span>Depth y</span>
+                          <strong>${formatNumber(layerData[index]?.depth || 0, 2)} in</strong>
+                        </div>
+                      </div>
+                      ${
+                        groupKey === "top" || layers.length > 1
+                          ? `<button class="action-button action-button--small action-button--danger" type="button" data-action="remove-layer" data-group="${groupKey}" data-index="${index}">Remove</button>`
+                          : ""
+                      }
+                    </article>
+                  `
+                )
+                .join("")
+            : `<div class="empty-state">${escapeHtml(groupKey === "top" ? "No top reinforcement layers are defined yet." : "At least one bottom layer is required.")}</div>`
+        }
+      </div>
+      ${numberField("Vertical clear spacing between layers (in)", spacingPath, spacingValue, { hint: "Measured clear between adjacent rows in the same face." })}
+    </section>
+  `;
+}
+
+function renderLayerScheduleTable(title, layers) {
+  return `
+    <article class="subpanel">
+      <h3>${escapeHtml(title)}</h3>
+      <div class="layer-schedule-table">
+        ${
+          layers.length
+            ? layers
+                .map(
+                  (layer) => `
+                    <div class="layer-schedule-row">
+                      <strong>L${layer.index + 1}</strong>
+                      <span>${escapeHtml(`${layer.barCount} ${layer.barSize}`)}</span>
+                      <span>${formatNumber(layer.area, 2)} in²</span>
+                      <span>y = ${formatNumber(layer.depth, 2)} in</span>
+                    </div>
+                  `
+                )
+                .join("")
+            : `<div class="empty-state">No layers</div>`
+        }
+      </div>
+    </article>
+  `;
+}
+
 export function renderApp(snapshot) {
   const { state, geometry, reinforcement, flexure, shear } = snapshot;
   const overallStatus = snapshot.messages.some((message) => message.type === "error")
@@ -161,52 +283,55 @@ export function renderApp(snapshot) {
           <p class="eyebrow">Bridge Superstructure Capacity Studio</p>
           <h1>TBeam</h1>
           <p class="hero__copy">
-            Interactive cast-in-place reinforced concrete T-beam design workspace for AASHTO LRFD 9th Edition flexural and shear capacity,
-            with live drawings, calculation narratives, LaTeX equations, and a print-ready engineering report.
+            Cast-in-place reinforced concrete T-beam flexural and shear capacity workspace with multi-layer reinforcement,
+            strain-compatibility calculations, live engineering drawings, and a branded printable report package.
           </p>
         </div>
         <div class="hero__actions">
           <button class="action-button action-button--primary" data-action="load-example">Load Example Beam</button>
           <button class="action-button" data-action="open-report">Open Report</button>
-          <button class="action-button" data-action="print-report">Print / Save PDF</button>
+          <button class="action-button" data-action="save-report">Save Report</button>
+          <button class="action-button" data-action="print-report">Print / PDF</button>
           <button class="action-button" data-action="reset-project">Reset Inputs</button>
         </div>
         <div class="hero__status">
           ${metricCard("Overall status", overallStatus, "Live autosave is enabled in this browser.")}
           ${metricCard("Design moment", `${formatNumber(flexure.phiMnKipFt, 1)} k-ft`, "phiMn")}
           ${metricCard("Design shear", `${formatNumber(shear.phiVn, 1)} k`, "phiVn")}
-          ${metricCard("Section behavior", flexure.sectionCase === "flange" ? "Flange compression block" : "Web compression block", `d = ${formatNumber(geometry.d, 2)} in`)}
+          ${metricCard("Section behavior", flexure.sectionCase === "flange" ? "Flange compression block" : "Flange + web compression", `d = ${formatNumber(geometry.d, 2)} in`)}
         </div>
       </header>
 
       <nav class="workflow-nav" aria-label="Workflow sections">
-        <a href="#design-summary">Summary</a>
+        <a href="#section-figure">Section Figure</a>
         <a href="#flexural-capacity">Flexure</a>
         <a href="#shear-capacity">Shear</a>
-        <a href="#drawings">Drawings</a>
+        <a href="#engineering-diagrams">Diagrams</a>
         <a href="#calculations">Calculations</a>
         <a href="#report-panel">Report</a>
       </nav>
 
-      <div class="app-grid">
+      <div class="top-workflow-grid">
         <aside class="sidebar">
           <details class="panel accordion-panel" open>
             ${renderPanelSummary(
-              `<p class="panel-kicker">01 Section Setup</p><h2>Project metadata and report header</h2><p>Define the title block used throughout the printable package.</p>`,
+              `<p class="panel-kicker">01 Section Setup</p><h2>Project and report branding</h2><p>Title block, company name, and logo used in the report package.</p>`,
               `
                 <div class="field-grid field-grid--two">
                   ${textField("Project name", "project.name", state.project.name)}
                   ${textField("Designer", "project.designer", state.project.designer)}
+                  ${textField("Company name", "project.companyName", state.project.companyName)}
                   ${textField("Date", "project.date", state.project.date, { type: "date" })}
                   ${textAreaField("Design notes", "project.notes", state.project.notes, 4)}
                 </div>
+                ${logoUploader(state.project)}
               `
             )}
           </details>
 
           <details class="panel accordion-panel" open>
             ${renderPanelSummary(
-              `<p class="panel-kicker">02 Geometry Inputs</p><h2>T-beam section geometry</h2><p>Flange, web, cover, and effective depth controls.</p>`,
+              `<p class="panel-kicker">02 Geometry Inputs</p><h2>T-beam section definition</h2><p>Core flange, web, cover, and effective-depth controls.</p>`,
               `
                 <div class="field-grid field-grid--two">
                   ${numberField("Flange width bf (in)", "geometry.bf", state.geometry.bf)}
@@ -214,19 +339,18 @@ export function renderApp(snapshot) {
                   ${numberField("Web width bw (in)", "geometry.bw", state.geometry.bw)}
                   ${numberField("Total depth h (in)", "geometry.h", state.geometry.h)}
                   ${numberField("Concrete cover (in)", "geometry.cover", state.geometry.cover)}
-                  ${numberField("Layer spacing clear (in)", "geometry.layerSpacing", state.geometry.layerSpacing)}
-                  ${checkboxField("Manual effective depth override", "geometry.manualEffectiveDepth", state.geometry.manualEffectiveDepth, "Leave unchecked to auto-compute d from reinforcement placement.")}
+                  ${checkboxField("Manual effective depth override", "geometry.manualEffectiveDepth", state.geometry.manualEffectiveDepth, "Use only when you want to override the layer-derived d value.", true)}
                   ${
                     state.geometry.manualEffectiveDepth
-                      ? numberField("Effective depth d (in)", "geometry.effectiveDepthOverride", state.geometry.effectiveDepthOverride, { hint: "Override used for design calculations." })
+                      ? numberField("Effective depth d (in)", "geometry.effectiveDepthOverride", state.geometry.effectiveDepthOverride, { hint: "Override used directly in analysis." })
                       : ""
                   }
                 </div>
                 <div class="derived-strip">
-                  ${metricCard("Auto d", `${formatNumber(reinforcement.effectiveDepthAuto, 2)} in`, "From cover and layer geometry")}
+                  ${metricCard("Auto d", `${formatNumber(reinforcement.effectiveDepthAuto, 2)} in`, "Bottom layer centroid")}
+                  ${metricCard("Top steel d'", `${formatNumber(geometry.dPrime, 2)} in`, "Top layer centroid")}
                   ${metricCard("Neutral axis c", `${formatNumber(flexure.c, 2)} in`, "Derived")}
                   ${metricCard("Compression block a", `${formatNumber(flexure.a, 2)} in`, "Derived")}
-                  ${metricCard("Gross area", `${formatNumber(geometry.grossArea, 0)} in²`, "Section property")}
                 </div>
               `
             )}
@@ -234,7 +358,7 @@ export function renderApp(snapshot) {
 
           <details class="panel accordion-panel" open>
             ${renderPanelSummary(
-              `<p class="panel-kicker">03 Material Inputs</p><h2>Concrete and reinforcing steel</h2><p>Default values are aligned with common bridge applications.</p>`,
+              `<p class="panel-kicker">03 Material Inputs</p><h2>Concrete and reinforcing steel</h2><p>Material properties used throughout flexure, shear, drawings, and report generation.</p>`,
               `
                 <div class="field-grid field-grid--two">
                   ${numberField("Concrete strength f'c (ksi)", "materials.fc", state.materials.fc)}
@@ -247,30 +371,46 @@ export function renderApp(snapshot) {
 
           <details class="panel accordion-panel" open>
             ${renderPanelSummary(
-              `<p class="panel-kicker">04 Reinforcement Inputs</p><h2>Longitudinal and transverse steel</h2><p>Areas, diameters, and effective depths update automatically.</p>`,
+              `<p class="panel-kicker">04 Reinforcement Inputs</p><h2>Layer-based reinforcement model</h2><p>Multiple top and bottom rows are supported and used directly in the drawings and strain-compatibility solver.</p>`,
               `
-                <div class="field-grid field-grid--two">
-                  ${selectField("Tension bar size", "reinforcement.tensionBarSize", state.reinforcement.tensionBarSize, BAR_OPTIONS)}
-                  ${numberField("Number of tension bars", "reinforcement.tensionBarCount", state.reinforcement.tensionBarCount, { step: "1", min: "1" })}
-                  ${numberField("Tension layers", "reinforcement.tensionLayers", state.reinforcement.tensionLayers, { step: "1", min: "1" })}
-                  ${checkboxField("Include compression steel", "reinforcement.compressionEnabled", state.reinforcement.compressionEnabled)}
-                  ${
-                    state.reinforcement.compressionEnabled
-                      ? `
-                          ${selectField("Compression bar size", "reinforcement.compressionBarSize", state.reinforcement.compressionBarSize, BAR_OPTIONS)}
-                          ${numberField("Compression bar count", "reinforcement.compressionBarCount", state.reinforcement.compressionBarCount, { step: "1", min: "0" })}
-                        `
-                      : ""
-                  }
-                  ${selectField("Stirrup bar size", "reinforcement.stirrupBarSize", state.reinforcement.stirrupBarSize, BAR_OPTIONS)}
-                  ${numberField("Stirrup legs", "reinforcement.stirrupLegs", state.reinforcement.stirrupLegs, { step: "1", min: "0" })}
-                  ${numberField("Stirrup spacing s (in)", "reinforcement.stirrupSpacing", state.reinforcement.stirrupSpacing)}
+                <div class="layer-editor-stack">
+                  ${renderLayerEditor(
+                    "Bottom reinforcement layers",
+                    "bottom",
+                    state.reinforcement.bottomLayers,
+                    "reinforcement.bottomLayerSpacing",
+                    state.reinforcement.bottomLayerSpacing,
+                    reinforcement.bottomLayers,
+                    "Layer order is from the soffit upward."
+                  )}
+                  ${renderLayerEditor(
+                    "Top reinforcement layers",
+                    "top",
+                    state.reinforcement.topLayers,
+                    "reinforcement.topLayerSpacing",
+                    state.reinforcement.topLayerSpacing,
+                    reinforcement.topLayers,
+                    "Layer order is from the top face downward."
+                  )}
+                  <section class="layer-editor">
+                    <div class="layer-editor__header">
+                      <div>
+                        <h3>Transverse reinforcement</h3>
+                        <p>Stirrups and LRFD shear input used for the beam elevation and shear calculations.</p>
+                      </div>
+                    </div>
+                    <div class="field-grid field-grid--two">
+                      ${selectField("Stirrup bar size", "reinforcement.stirrupBarSize", state.reinforcement.stirrupBarSize, BAR_OPTIONS)}
+                      ${numberField("Stirrup legs", "reinforcement.stirrupLegs", state.reinforcement.stirrupLegs, { step: "1", min: "0" })}
+                      ${numberField("Stirrup spacing s (in)", "reinforcement.stirrupSpacing", state.reinforcement.stirrupSpacing)}
+                    </div>
+                  </section>
                 </div>
-                <div class="derived-strip">
-                  ${metricCard("Tension steel As", `${formatNumber(reinforcement.tensionArea, 2)} in²`, `${state.reinforcement.tensionBarCount} ${state.reinforcement.tensionBarSize}`)}
-                  ${metricCard("Compression steel As'", `${formatNumber(reinforcement.compressionArea, 2)} in²`, state.reinforcement.compressionEnabled ? `${state.reinforcement.compressionBarCount} ${state.reinforcement.compressionBarSize}` : "Disabled")}
+                <div class="derived-strip derived-strip--tall">
+                  ${metricCard("Bottom steel As", `${formatNumber(reinforcement.tensionArea, 2)} in²`, `${reinforcement.totalBottomBars} total bars`)}
+                  ${metricCard("Top steel As'", `${formatNumber(reinforcement.compressionArea, 2)} in²`, `${reinforcement.totalTopBars} total bars`)}
                   ${metricCard("Stirrup area Av", `${formatNumber(reinforcement.shearArea, 2)} in²`, `${state.reinforcement.stirrupLegs} legs`)}
-                  ${metricCard("Bar diameters", `${formatNumber(reinforcement.tensionBar.diameter, 3)} / ${formatNumber(reinforcement.stirrupBar.diameter, 3)} in`, "Longitudinal / stirrup")}
+                  ${metricCard("Stirrup diameter", `${formatNumber(reinforcement.stirrupBar.diameter, 3)} in`, "From selected stirrup size")}
                 </div>
               `
             )}
@@ -278,7 +418,7 @@ export function renderApp(snapshot) {
 
           <details class="panel accordion-panel">
             ${renderPanelSummary(
-              `<p class="panel-kicker">05 Shear Assumptions</p><h2>AASHTO beta and theta</h2><p>Editable parameters for capacity-oriented shear evaluation.</p>`,
+              `<p class="panel-kicker">05 Shear Assumptions</p><h2>AASHTO beta and theta</h2><p>Editable LRFD parameters for capacity-oriented shear evaluation.</p>`,
               `
                 <div class="field-grid field-grid--two">
                   ${numberField("Beta", "reinforcement.shearBeta", state.reinforcement.shearBeta)}
@@ -293,7 +433,21 @@ export function renderApp(snapshot) {
           </details>
         </aside>
 
-        <main class="workspace">
+        <section class="top-figure-column">
+          <article class="panel figure-panel" id="section-figure">
+            <div class="panel-head panel-head--compact">
+              <div>
+                <p class="panel-kicker">05 Parametric Section Figure</p>
+                <h2>Main T-beam engineering figure</h2>
+              </div>
+            </div>
+            ${renderSectionDrawing(snapshot)}
+            <div class="layer-schedule-grid">
+              ${renderLayerScheduleTable("Bottom layers", reinforcement.bottomLayers)}
+              ${renderLayerScheduleTable("Top layers", reinforcement.topLayers)}
+            </div>
+          </article>
+
           <section class="dashboard-grid" id="design-summary">
             <article class="panel">
               <div class="panel-head panel-head--compact">
@@ -305,7 +459,7 @@ export function renderApp(snapshot) {
               <div class="metric-grid">
                 ${metricCard("Nominal moment Mn", `${formatNumber(flexure.mnKipFt, 1)} k-ft`, "Unfactored")}
                 ${metricCard("Design moment phiMn", `${formatNumber(flexure.phiMnKipFt, 1)} k-ft`, flexure.tensionControlled ? "Tension-controlled" : "Check strain state")}
-                ${metricCard("Nominal shear Vn", `${formatNumber(shear.vn, 1)} k`, shear.controlsLimit ? "Limited by 0.25 f'c bwdv" : "Vc + Vs governs")}
+                ${metricCard("Nominal shear Vn", `${formatNumber(shear.vn, 1)} k`, shear.controlsLimit ? "Limited by 0.25 f'c bw dv" : "Vc + Vs governs")}
                 ${metricCard("Design shear phiVn", `${formatNumber(shear.phiVn, 1)} k`, `dv = ${formatNumber(shear.dv, 2)} in`)}
               </div>
             </article>
@@ -325,151 +479,153 @@ export function renderApp(snapshot) {
               </div>
             </article>
           </section>
-
-          <details class="panel workspace-panel" open id="flexural-capacity">
-            ${renderPanelSummary(
-              `<p class="panel-kicker">Flexural Capacity</p><h2>Positive flexure per AASHTO LRFD</h2><p>Whitney stress block, neutral axis solution, and internal lever arm.</p>`,
-              `
-                <div class="analysis-grid">
-                  <section class="subpanel">
-                    <div class="metric-grid">
-                      ${metricCard("a", `${formatNumber(flexure.a, 2)} in`, flexure.sectionCase === "flange" ? "Compression stays in flange" : "Compression extends into web")}
-                      ${metricCard("c", `${formatNumber(flexure.c, 2)} in`, "Neutral axis depth")}
-                      ${metricCard("T", `${formatNumber(flexure.tensionForce, 1)} k`, `fs = ${formatNumber(flexure.tensionStress, 1)} ksi`)}
-                      ${metricCard("z", `${formatNumber(flexure.leverArm, 2)} in`, "Internal lever arm")}
-                    </div>
-                    <div class="equation-stack">
-                      ${equationBlock("T = A_s f_s")}
-                      ${equationBlock(
-                        flexure.sectionCase === "flange"
-                          ? "C = 0.85 f'_c b_f a + C'_s"
-                          : "C = 0.85 f'_c[b_w a + (b_f - b_w)h_f] + C'_s"
-                      )}
-                      ${equationBlock("M_n = \\sum C_i(d - y_i)")}
-                    </div>
-                  </section>
-                  <section class="subpanel">
-                    <div class="kv-grid">
-                      ${keyValueRows([
-                        ["Compression block regime", flexure.sectionCase === "flange" ? "Within flange" : "Extends into web"],
-                        ["Tension strain", formatNumber(flexure.tensionStrain, 5)],
-                        ["Compression steel stress", `${formatNumber(flexure.compressionStress, 1)} ksi`],
-                        ["Compression steel force", `${formatNumber(flexure.compressionSteelForce, 1)} k`],
-                        ["Nominal moment Mn", `${formatNumber(flexure.mnKipFt, 1)} k-ft`],
-                        ["Design moment phiMn", `${formatNumber(flexure.phiMnKipFt, 1)} k-ft`]
-                      ])}
-                    </div>
-                  </section>
-                </div>
-              `
-            )}
-          </details>
-
-          <details class="panel workspace-panel" open id="shear-capacity">
-            ${renderPanelSummary(
-              `<p class="panel-kicker">Shear Capacity</p><h2>Concrete and stirrup resistance</h2><p>AASHTO LRFD shear evaluation with editable beta and theta inputs.</p>`,
-              `
-                <div class="analysis-grid">
-                  <section class="subpanel">
-                    <div class="metric-grid">
-                      ${metricCard("Vc", `${formatNumber(shear.vc, 1)} k`, "Concrete contribution")}
-                      ${metricCard("Vs", `${formatNumber(shear.vs, 1)} k`, "Stirrup contribution")}
-                      ${metricCard("Vn", `${formatNumber(shear.vn, 1)} k`, shear.controlsLimit ? "Governed by web crushing limit" : "Vc + Vs")}
-                      ${metricCard("phiVn", `${formatNumber(shear.phiVn, 1)} k`, "Design shear capacity")}
-                    </div>
-                    <div class="equation-stack">
-                      ${equationBlock("V_n = V_c + V_s")}
-                      ${equationBlock("V_c = 0.0316\\beta\\sqrt{f'_c}b_wd_v")}
-                      ${equationBlock("V_s = \\frac{A_vf_yd_v(\\cot\\theta + \\cot\\alpha)\\sin\\alpha}{s}")}
-                    </div>
-                  </section>
-                  <section class="subpanel">
-                    <div class="kv-grid">
-                      ${keyValueRows([
-                        ["Effective shear depth dv", `${formatNumber(shear.dv, 2)} in`],
-                        ["Beta", formatNumber(shear.beta, 2)],
-                        ["Theta", `${formatNumber(shear.thetaDeg, 1)} deg`],
-                        ["Av", `${formatNumber(reinforcement.shearArea, 2)} in²`],
-                        ["Stirrup spacing s", `${formatNumber(state.reinforcement.stirrupSpacing, 1)} in`],
-                        ["Design shear phiVn", `${formatNumber(shear.phiVn, 1)} k`]
-                      ])}
-                    </div>
-                  </section>
-                </div>
-              `
-            )}
-          </details>
-
-          <details class="panel workspace-panel" open id="drawings">
-            ${renderPanelSummary(
-              `<p class="panel-kicker">Parametric Drawings</p><h2>Cross-section, flexure, and shear figures</h2><p>Each drawing is built from the same geometry and resistance outputs shown in the calculations.</p>`,
-              `
-                <div class="drawing-grid">
-                  <article class="drawing-card">
-                    <h3>T-beam cross section</h3>
-                    ${renderSectionDrawing(snapshot)}
-                  </article>
-                  <article class="drawing-card">
-                    <h3>Flexural stress diagram</h3>
-                    ${renderFlexureDrawing(snapshot)}
-                  </article>
-                  <article class="drawing-card">
-                    <h3>Shear reinforcement diagram</h3>
-                    ${renderShearDrawing(snapshot)}
-                  </article>
-                </div>
-              `
-            )}
-          </details>
-
-          <details class="panel workspace-panel" open id="calculations">
-            ${renderPanelSummary(
-              `<p class="panel-kicker">Step-by-Step Calculations</p><h2>Equation trail and substituted values</h2><p>Rendered with LaTeX so the calculation path can be reviewed and printed directly.</p>`,
-              `
-                <div class="steps-grid">
-                  ${renderStepCards("Flexural capacity", flexure.steps)}
-                  ${renderStepCards("Shear capacity", shear.steps)}
-                </div>
-              `
-            )}
-          </details>
-
-          <details class="panel workspace-panel" open id="report-panel">
-            ${renderPanelSummary(
-              `<p class="panel-kicker">Printable Report</p><h2>Engineering report output</h2><p>Open the live report in a new tab or print directly to PDF from the browser.</p>`,
-              `
-                <div class="report-preview-grid">
-                  <article class="subpanel">
-                    <h3>Included in the report</h3>
-                    <div class="report-outline">
-                      <div>Section geometry and effective dimensions</div>
-                      <div>Material and reinforcement schedule</div>
-                      <div>Flexural and shear equations with substituted values</div>
-                      <div>Parametric SVG drawings</div>
-                      <div>Final design summary with phiMn and phiVn</div>
-                    </div>
-                    <div class="report-actions">
-                      <button class="action-button action-button--primary" data-action="open-report">Open report window</button>
-                      <button class="action-button" data-action="print-report">Print / Save PDF</button>
-                    </div>
-                  </article>
-                  <article class="subpanel">
-                    <h3>Report title block</h3>
-                    <div class="kv-grid">
-                      ${keyValueRows([
-                        ["Project", state.project.name],
-                        ["Designer", state.project.designer],
-                        ["Date", state.project.date],
-                        ["Notes", state.project.notes || "None"]
-                      ])}
-                    </div>
-                  </article>
-                </div>
-              `
-            )}
-          </details>
-        </main>
+        </section>
       </div>
+
+      <main class="workspace">
+        <details class="panel workspace-panel" open id="flexural-capacity">
+          ${renderPanelSummary(
+            `<p class="panel-kicker">06 Flexural Capacity</p><h2>Strain compatibility and moment resistance</h2><p>Layer-by-layer steel response, compression-block case, and nominal/design moment capacity.</p>`,
+            `
+              <div class="analysis-grid">
+                <section class="subpanel">
+                  <div class="metric-grid">
+                    ${metricCard("a", `${formatNumber(flexure.a, 2)} in`, flexure.sectionCase === "flange" ? "Compression remains in flange" : "Compression extends into web")}
+                    ${metricCard("c", `${formatNumber(flexure.c, 2)} in`, "Neutral axis depth")}
+                    ${metricCard("T", `${formatNumber(flexure.totalTension, 1)} k`, `yT = ${formatNumber(flexure.tensionResultantDepth, 2)} in`)}
+                    ${metricCard("z", `${formatNumber(flexure.leverArm, 2)} in`, "Resultant lever arm")}
+                  </div>
+                  <div class="equation-stack">
+                    ${equationBlock("A_s = \\sum_i n_iA_{b,i}")}
+                    ${equationBlock("a = \\beta_1 c")}
+                    ${equationBlock(
+                      flexure.sectionCase === "flange"
+                        ? "C_c = 0.85f'_c b_f a"
+                        : "C_c = 0.85f'_c\\left[b_w a + (b_f - b_w)h_f\\right]"
+                    )}
+                    ${equationBlock("M_n = \\left|\\sum F_i y_i\\right|")}
+                  </div>
+                </section>
+                <section class="subpanel">
+                  <div class="kv-grid">
+                    ${keyValueRows([
+                      ["Bottom steel area As", `${formatNumber(reinforcement.tensionArea, 2)} in²`],
+                      ["Top steel area As'", `${formatNumber(reinforcement.compressionArea, 2)} in²`],
+                      ["Automatic effective depth d", `${formatNumber(geometry.d, 2)} in`],
+                      ["Top steel depth d'", `${formatNumber(geometry.dPrime, 2)} in`],
+                      ["Maximum tension strain", `${formatNumber(flexure.maxTensionStrain, 5)}`],
+                      ["Design moment phiMn", `${formatNumber(flexure.phiMnKipFt, 2)} k-ft`]
+                    ])}
+                  </div>
+                </section>
+              </div>
+            `
+          )}
+        </details>
+
+        <details class="panel workspace-panel" open id="shear-capacity">
+          ${renderPanelSummary(
+            `<p class="panel-kicker">07 Shear Capacity</p><h2>Concrete and stirrup resistance</h2><p>Concrete contribution, stirrup contribution, LRFD limit checks, and design shear capacity.</p>`,
+            `
+              <div class="analysis-grid">
+                <section class="subpanel">
+                  <div class="metric-grid">
+                    ${metricCard("Vc", `${formatNumber(shear.vc, 2)} k`, "Concrete contribution")}
+                    ${metricCard("Vs", `${formatNumber(shear.vs, 2)} k`, "Stirrup contribution")}
+                    ${metricCard("Vn", `${formatNumber(shear.vn, 2)} k`, shear.controlsLimit ? "Limited by 0.25 f'c bw dv" : "Vc + Vs")}
+                    ${metricCard("phiVn", `${formatNumber(shear.phiVn, 2)} k`, "Design shear capacity")}
+                  </div>
+                  <div class="equation-stack">
+                    ${equationBlock("d_v = \\max\\left(d - \\frac{a}{2},\\ 0.9d,\\ 0.72h\\right)")}
+                    ${equationBlock("V_c = 0.0316\\beta\\sqrt{f'_c}b_wd_v")}
+                    ${equationBlock("V_s = \\frac{A_vf_yd_v\\cot\\theta}{s}")}
+                    ${equationBlock("\\phi V_n = 0.90\\min\\left(V_c + V_s,\\ 0.25f'_c b_w d_v\\right)")}
+                  </div>
+                </section>
+                <section class="subpanel">
+                  <div class="kv-grid">
+                    ${keyValueRows([
+                      ["Effective shear depth dv", `${formatNumber(shear.dv, 2)} in`],
+                      ["Stirrup area Av", `${formatNumber(reinforcement.shearArea, 2)} in²`],
+                      ["Stirrup spacing s", `${formatNumber(state.reinforcement.stirrupSpacing, 2)} in`],
+                      ["Beta", `${formatNumber(shear.beta, 2)}`],
+                      ["Theta", `${formatNumber(shear.thetaDeg, 1)} deg`],
+                      ["Design shear phiVn", `${formatNumber(shear.phiVn, 2)} k`]
+                    ])}
+                  </div>
+                </section>
+              </div>
+            `
+          )}
+        </details>
+
+        <details class="panel workspace-panel" open id="engineering-diagrams">
+          ${renderPanelSummary(
+            `<p class="panel-kicker">08 Engineering Diagrams</p><h2>Flexure and shear detail figures</h2><p>Textbook-style diagrams tied directly to the member geometry and calculation outputs.</p>`,
+            `
+              <div class="drawing-grid">
+                <article class="drawing-card">
+                  <h3>Flexural strain compatibility diagram</h3>
+                  ${renderFlexureDrawing(snapshot)}
+                </article>
+                <article class="drawing-card">
+                  <h3>Shear reinforcement elevation</h3>
+                  ${renderShearDrawing(snapshot)}
+                </article>
+              </div>
+            `
+          )}
+        </details>
+
+        <details class="panel workspace-panel" open id="calculations">
+          ${renderPanelSummary(
+            `<p class="panel-kicker">09 Step-by-Step Calculations</p><h2>Governing equations, substitutions, and intermediate values</h2><p>Every major design stage is shown explicitly with professional equation rendering.</p>`,
+            `
+              <div class="steps-grid">
+                ${renderStepCards("Flexural capacity", flexure.steps)}
+                ${renderStepCards("Shear capacity", shear.steps)}
+              </div>
+            `
+          )}
+        </details>
+
+        <details class="panel workspace-panel" open id="report-panel">
+          ${renderPanelSummary(
+            `<p class="panel-kicker">10 Report</p><h2>Open, save, and print the engineering package</h2><p>The report is a standalone branded calculation package with drawings, equations, summaries, and your uploaded logo.</p>`,
+            `
+              <div class="report-preview-grid">
+                <article class="subpanel">
+                  <h3>Report actions</h3>
+                  <div class="report-outline">
+                    <div>Open a live report window for on-screen review</div>
+                    <div>Save a standalone HTML calculation package</div>
+                    <div>Print directly to PDF with the report title block and logo</div>
+                    <div>Include section figure, flexural/shear diagrams, and full calculations</div>
+                  </div>
+                  <div class="report-actions">
+                    <button class="action-button action-button--primary" data-action="open-report">Open Report</button>
+                    <button class="action-button" data-action="save-report">Save Report</button>
+                    <button class="action-button" data-action="print-report">Print / PDF</button>
+                  </div>
+                </article>
+                <article class="subpanel">
+                  <h3>Report title block</h3>
+                  <div class="kv-grid">
+                    ${keyValueRows([
+                      ["Project", state.project.name],
+                      ["Designer", state.project.designer],
+                      ["Company", state.project.companyName || "None"],
+                      ["Date", state.project.date],
+                      ["Logo", state.project.companyLogoDataUrl ? "Included in report header" : "Not uploaded"],
+                      ["Notes", state.project.notes || "None"]
+                    ])}
+                  </div>
+                </article>
+              </div>
+            `
+          )}
+        </details>
+      </main>
     </div>
   `;
 }

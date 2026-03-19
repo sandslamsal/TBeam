@@ -6,12 +6,13 @@ TBeam is a professional cast-in-place reinforced concrete T-beam design applicat
 
 - `src/analysis`: orchestrates the engineering workflow and design summary.
 - `src/geometry`: derives section properties, beta1, and effective dimensions.
-- `src/reinforcement`: resolves bar sizes, steel areas, layer geometry, and stirrup properties.
-- `src/flexure`: solves the neutral axis with strain compatibility and computes `Mn` and `phiMn`.
+- `src/reinforcement`: resolves bar sizes, top/bottom layer geometry, actual bar elevations, stirrup properties, and section bar placement.
+- `src/flexure`: solves the neutral axis with layer-by-layer strain compatibility and computes `Mn` and `phiMn`.
 - `src/shear`: evaluates `Vc`, `Vs`, `Vn`, and `phiVn` using editable AASHTO shear parameters.
-- `src/drawings`: generates parametric SVG drawings for the section, flexure diagram, and shear detailing.
-- `src/report`: builds a print-ready report window with summary tables, equations, and drawings.
+- `src/drawings`: generates parametric SVG drawings for the section, flexural strain-compatibility diagram, and shear reinforcement elevation.
+- `src/report`: builds a print-ready report window plus downloadable standalone report files with drawings, equations, and logo support.
 - `src/ui`: renders the engineering interface and LaTeX equations.
+- `src/state`: stores defaults, local persistence, and state normalization for legacy-to-layered reinforcement migration.
 
 ## Engineering Engine
 
@@ -19,11 +20,11 @@ TBeam is a professional cast-in-place reinforced concrete T-beam design applicat
 
 The flexural engine:
 
-1. derives steel areas and effective depth from bar layout;
+1. derives steel areas and actual top/bottom layer centroids from the layer layout;
 2. applies a Whitney stress block with AASHTO-compatible `beta1`;
-3. solves the neutral axis depth `c` by strain compatibility and force equilibrium;
+3. solves the neutral axis depth `c` by strain compatibility and force equilibrium using every reinforcement layer independently;
 4. handles both cases where the compression block remains in the flange and where it extends into the web;
-5. computes `Mn`, `phiMn`, force resultants, lever arm, and step-by-step equations.
+5. computes resultants, lever arm, `Mn`, `phiMn`, and the full step-by-step calculation package.
 
 ### Shear capacity
 
@@ -36,6 +37,13 @@ The shear engine:
 5. reports `phiVn` and the calculation sequence.
 
 Because the app is organized as a member-capacity tool rather than a demand-check workflow, the AASHTO shear parameters `beta` and `theta` are surfaced as editable inputs and documented in the interface/report.
+
+## Report workflow
+
+- `Open Report` launches the live branded report in a new tab.
+- `Save Report` downloads a standalone HTML calculation package.
+- `Print / PDF` opens the report and triggers the browser print dialog.
+- The report header supports an uploaded company logo and company name.
 
 ## Running locally
 
