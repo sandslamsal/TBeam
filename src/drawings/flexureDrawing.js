@@ -16,31 +16,55 @@ function leader(x1, y1, x2, y2, label) {
   `;
 }
 
-function stressArrow(x1, y, x2, label, toneClass, labelOffset) {
+function horizontalDim(x1, x2, y, label) {
+  return `
+    <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" class="dim-arrow" marker-start="url(#dimArrowFlex)" marker-end="url(#dimArrowFlex)" />
+    <line x1="${x1}" y1="${y + 2}" x2="${x1}" y2="${y + 18}" class="dim-extension" />
+    <line x1="${x2}" y1="${y + 2}" x2="${x2}" y2="${y + 18}" class="dim-extension" />
+    <text x="${(x1 + x2) / 2}" y="${y - 8}" class="dim-text dim-text--center">${label}</text>
+  `;
+}
+
+function verticalDim(x, y1, y2, label) {
+  return `
+    <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" class="dim-arrow" marker-start="url(#dimArrowFlex)" marker-end="url(#dimArrowFlex)" />
+    <text x="${x + 12}" y="${(y1 + y2) / 2 + 4}" class="dim-text">${label}</text>
+  `;
+}
+
+function forceArrow(x1, y, x2, label, toneClass, textDx = 10) {
   return `
     <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" class="steel-stress-line ${toneClass}" marker-end="url(#stressArrowHead)" />
-    <text x="${x2 + labelOffset}" y="${y + 4}" class="drawing-label">${label}</text>
+    <text x="${x2 + textDx}" y="${y + 4}" class="drawing-label">${label}</text>
+  `;
+}
+
+function stressBlockMarkup(sectionCase, x, topY, aY, flangeHeight) {
+  if (sectionCase === "flange") {
+    return `<rect x="${x - 28}" y="${topY}" width="28" height="${Math.max(0, aY - topY)}" class="compression-block" />`;
+  }
+
+  return `
+    <rect x="${x - 44}" y="${topY}" width="44" height="${flangeHeight}" class="compression-block" />
+    <rect x="${x - 18}" y="${topY + flangeHeight}" width="18" height="${Math.max(0, aY - (topY + flangeHeight))}" class="compression-block" />
   `;
 }
 
 export function renderFlexureDrawing(snapshot) {
   const { geometry, reinforcement, flexure } = snapshot;
-  const viewWidth = 1080;
-  const viewHeight = 540;
+  const viewWidth = 1120;
+  const viewHeight = 560;
   const margin = 34;
   const titleY = 46;
-  const panelTop = 130;
+  const panelTop = 132;
   const panelGap = 22;
   const panelWidth = (viewWidth - margin * 2 - panelGap * 3) / 4;
-  const panelHeight = 320;
-  const sectionPanelX = margin;
-  const strainPanelX = sectionPanelX + panelWidth + panelGap;
-  const stressPanelX = strainPanelX + panelWidth + panelGap;
-  const couplePanelX = stressPanelX + panelWidth + panelGap;
-  const sectionInsetTop = panelTop + 28;
-  const sectionScale = Math.min((panelWidth - 54) / geometry.bf, (panelHeight - 62) / geometry.h);
-  const sectionCenter = sectionPanelX + panelWidth / 2;
-  const sectionTop = sectionInsetTop + 18;
+  const panelHeight = 332;
+  const panelXs = Array.from({ length: 4 }, (_, index) => margin + index * (panelWidth + panelGap));
+
+  const sectionScale = Math.min((panelWidth - 60) / geometry.bf, (panelHeight - 90) / geometry.h);
+  const sectionCenter = panelXs[0] + panelWidth / 2;
+  const sectionTop = panelTop + 42;
   const sectionBottom = sectionTop + geometry.h * sectionScale;
   const neutralAxisY = sectionTop + flexure.c * sectionScale;
   const compressionBottomY = sectionTop + Math.min(flexure.a, geometry.h) * sectionScale;
@@ -49,49 +73,41 @@ export function renderFlexureDrawing(snapshot) {
   const flangeWidth = geometry.bf * sectionScale;
   const webWidth = geometry.bw * sectionScale;
   const flangeHeight = geometry.hf * sectionScale;
-  const compressionBlock =
-    flexure.sectionCase === "flange"
-      ? `<rect x="${sectionCenter - flangeWidth / 2}" y="${sectionTop}" width="${flangeWidth}" height="${Math.max(0, compressionBottomY - sectionTop)}" class="compression-block" />`
-      : `
-          <rect x="${sectionCenter - flangeWidth / 2}" y="${sectionTop}" width="${flangeWidth}" height="${flangeHeight}" class="compression-block" />
-          <rect x="${sectionCenter - webWidth / 2}" y="${sectionTop + flangeHeight}" width="${webWidth}" height="${Math.max(0, compressionBottomY - (sectionTop + flangeHeight))}" class="compression-block" />
-        `;
 
-  const barMarkup = [...reinforcement.topLayers, ...reinforcement.bottomLayers]
+  const sectionBars = [...reinforcement.topLayers, ...reinforcement.bottomLayers]
     .flatMap((layer) =>
       layer.xOffsets.map((offset) => {
         const x = sectionCenter + offset * sectionScale;
         const y = sectionTop + layer.depth * sectionScale;
-        const radius = Math.max(2.8, (layer.diameter * sectionScale) / 2);
+        const radius = Math.max(2.6, (layer.diameter * sectionScale) / 2);
         return `<circle cx="${x}" cy="${y}" r="${radius}" class="bar ${layer.family === "bottom" ? "bar--bottom" : "bar--top"}" />`;
       })
     )
     .join("");
 
-  const strainAxisX = strainPanelX + panelWidth / 2;
-  const strainTopX = strainAxisX - 56;
+  const strainAxisX = panelXs[1] + panelWidth / 2;
+  const strainTopX = strainAxisX - 54;
   const strainBottomX = strainAxisX + 70;
-  const strainTopY = sectionTop;
-  const strainBottomY = sectionBottom;
-
-  const stressAxisX = stressPanelX + panelWidth / 2;
+  const stressAxisX = panelXs[2] + 96;
+  const forceAxisX = panelXs[2] + panelWidth - 94;
+  const flangeHeightSketch = Math.max(18, flangeHeight);
+  const tensionForceArrows = flexure.tensionLayers
+    .map((layer, index) => {
+      const y = sectionTop + layer.depth * sectionScale;
+      const length = Math.max(28, Math.min(70, Math.abs(layer.netForce) * 0.12));
+      return forceArrow(forceAxisX - length, y, forceAxisX, `T${index + 1}`, "steel-stress-line--tension");
+    })
+    .join("");
   const compressionSteelArrows = flexure.compressionSteelLayers
     .map((layer, index) => {
       const y = sectionTop + layer.depth * sectionScale;
-      const length = Math.max(24, Math.min(64, Math.abs(layer.netForce) * 0.16));
-      return stressArrow(stressAxisX, y, stressAxisX - length, `Cs${index + 1}`, "steel-stress-line--compression", -30);
-    })
-    .join("");
-  const tensionSteelArrows = flexure.tensionLayers
-    .map((layer, index) => {
-      const y = sectionTop + layer.depth * sectionScale;
-      const length = Math.max(30, Math.min(76, Math.abs(layer.netForce) * 0.12));
-      return stressArrow(stressAxisX, y, stressAxisX + length, `T${index + 1}`, "steel-stress-line--tension", 10);
+      const length = Math.max(22, Math.min(54, Math.abs(layer.netForce) * 0.14));
+      return forceArrow(forceAxisX - length, y, forceAxisX, `Cs${index + 1}`, "steel-stress-line--compression");
     })
     .join("");
 
-  const coupleAxisX = couplePanelX + 78;
-  const resultBoxX = couplePanelX + 118;
+  const coupleAxisX = panelXs[3] + 86;
+  const resultBoxX = panelXs[3] + 128;
   const resultRows = [
     ["C", `${formatNumber(flexure.totalCompression, 1)} k`],
     ["T", `${formatNumber(flexure.totalTension, 1)} k`],
@@ -109,62 +125,68 @@ export function renderFlexureDrawing(snapshot) {
         <marker id="stressArrowHead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
           <path d="M0,0 L8,4 L0,8 z" fill="currentColor"></path>
         </marker>
+        <marker id="dimArrowFlex" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <path d="M0,5 L10,0 L8,5 L10,10 z" fill="#355168"></path>
+        </marker>
       </defs>
 
       <rect x="18" y="18" width="${viewWidth - 36}" height="${viewHeight - 36}" rx="20" class="drawing-frame" />
       <text x="${margin}" y="${titleY}" class="drawing-title">Flexural Strain Compatibility</text>
-      <text x="${margin}" y="${titleY + 22}" class="drawing-subtitle">Section, strain, stress, and resultant-force panels aligned to the solved neutral axis and multi-layer reinforcement response</text>
+      <text x="${margin}" y="${titleY + 22}" class="drawing-subtitle">Textbook-style section, strain, stress, and force sketches referenced to the solved ${flexure.sectionCase === "flange" ? "flange compression block" : "flange-plus-web compression block"} condition</text>
 
-      ${panelFrame(sectionPanelX, panelTop, panelWidth, panelHeight, "1. Section")}
-      ${panelFrame(strainPanelX, panelTop, panelWidth, panelHeight, "2. Strain")}
-      ${panelFrame(stressPanelX, panelTop, panelWidth, panelHeight, "3. Stress / Forces")}
-      ${panelFrame(couplePanelX, panelTop, panelWidth, panelHeight, "4. Resultant Couple")}
+      ${panelFrame(panelXs[0], panelTop, panelWidth, panelHeight, "1. Section")}
+      ${panelFrame(panelXs[1], panelTop, panelWidth, panelHeight, "2. Strain")}
+      ${panelFrame(panelXs[2], panelTop, panelWidth, panelHeight, "3. Stress / Forces")}
+      ${panelFrame(panelXs[3], panelTop, panelWidth, panelHeight, "4. Resultant Couple")}
 
-      ${compressionBlock}
       <rect x="${sectionCenter - flangeWidth / 2}" y="${sectionTop}" width="${flangeWidth}" height="${flangeHeight}" class="section-outline section-fill" />
       <rect x="${sectionCenter - webWidth / 2}" y="${sectionTop + flangeHeight}" width="${webWidth}" height="${geometry.webDepth * sectionScale}" class="section-outline section-fill" />
-      ${barMarkup}
-      <line x1="${sectionPanelX + 16}" y1="${neutralAxisY}" x2="${sectionPanelX + panelWidth - 16}" y2="${neutralAxisY}" class="neutral-axis" />
-      ${leader(sectionPanelX + panelWidth - 20, neutralAxisY, sectionPanelX + panelWidth - 2, neutralAxisY - 16, "N.A.")}
-      ${leader(sectionCenter + flangeWidth / 2 - 4, compressionBottomY, sectionPanelX + panelWidth - 6, compressionBottomY + 4, `a = ${formatNumber(flexure.a, 2)} in`)}
+      ${sectionBars}
+      <line x1="${panelXs[0] + 16}" y1="${neutralAxisY}" x2="${panelXs[0] + panelWidth - 16}" y2="${neutralAxisY}" class="neutral-axis" />
+      ${horizontalDim(sectionCenter - flangeWidth / 2, sectionCenter + flangeWidth / 2, sectionTop - 16, `b = ${formatNumber(geometry.bf, 1)} in`)}
+      ${verticalDim(panelXs[0] + 18, sectionTop, sectionTop + flangeHeight, `hf = ${formatNumber(geometry.hf, 1)} in`)}
+      ${verticalDim(panelXs[0] + 42, sectionTop, sectionTop + geometry.d * sectionScale, `d = ${formatNumber(geometry.d, 1)} in`)}
+      ${leader(panelXs[0] + panelWidth - 26, neutralAxisY, panelXs[0] + panelWidth - 6, neutralAxisY - 16, "N.A.")}
+      ${leader(sectionCenter - webWidth / 2 + 8, sectionBottom - 12, sectionCenter + webWidth / 2 + 12, sectionBottom + 20, "As")}
 
-      <line x1="${strainAxisX}" y1="${strainTopY}" x2="${strainAxisX}" y2="${strainBottomY}" class="stress-axis" />
-      <polygon points="${strainTopX},${strainTopY} ${strainAxisX},${neutralAxisY} ${strainBottomX},${strainBottomY}" class="strain-profile" />
-      <line x1="${strainPanelX + 18}" y1="${compressionBottomY}" x2="${strainPanelX + panelWidth - 18}" y2="${compressionBottomY}" class="dim-extension" />
-      <line x1="${strainPanelX + 18}" y1="${neutralAxisY}" x2="${strainPanelX + panelWidth - 18}" y2="${neutralAxisY}" class="neutral-axis" />
-      <text x="${strainTopX - 12}" y="${strainTopY - 10}" class="drawing-label">ec = 0.003</text>
-      <text x="${strainBottomX - 2}" y="${strainBottomY + 18}" class="drawing-label">et = ${formatNumber(flexure.maxTensionStrain, 5)}</text>
+      <line x1="${strainAxisX}" y1="${sectionTop}" x2="${strainAxisX}" y2="${sectionBottom}" class="stress-axis" />
+      <polygon points="${strainTopX},${sectionTop} ${strainAxisX},${neutralAxisY} ${strainBottomX},${sectionBottom}" class="strain-profile" />
+      <line x1="${panelXs[1] + 18}" y1="${neutralAxisY}" x2="${panelXs[1] + panelWidth - 18}" y2="${neutralAxisY}" class="neutral-axis" />
+      <text x="${strainTopX - 2}" y="${sectionTop - 10}" class="drawing-label">ec = 0.003</text>
+      <text x="${strainBottomX - 4}" y="${sectionBottom + 18}" class="drawing-label">et = ${formatNumber(flexure.maxTensionStrain, 5)}</text>
       <text x="${strainAxisX + 10}" y="${compressionBottomY - 8}" class="drawing-label">a = ${formatNumber(flexure.a, 2)} in</text>
       <text x="${strainAxisX + 10}" y="${neutralAxisY - 8}" class="drawing-label">c = ${formatNumber(flexure.c, 2)} in</text>
 
       <line x1="${stressAxisX}" y1="${sectionTop}" x2="${stressAxisX}" y2="${sectionBottom}" class="stress-axis" />
-      <rect x="${stressAxisX - 72}" y="${sectionTop}" width="72" height="${Math.max(0, compressionBottomY - sectionTop)}" class="compression-block" />
-      <text x="${stressAxisX - 84}" y="${sectionTop - 10}" class="drawing-label">0.85 f'c</text>
-      <text x="${stressAxisX - 84}" y="${compressionResultantY + 4}" class="drawing-label">Cc</text>
+      ${stressBlockMarkup(flexure.sectionCase, stressAxisX, sectionTop, compressionBottomY, flangeHeightSketch)}
+      <line x1="${panelXs[2] + 16}" y1="${neutralAxisY}" x2="${panelXs[2] + panelWidth - 16}" y2="${neutralAxisY}" class="neutral-axis" />
+      <text x="${stressAxisX - 60}" y="${sectionTop - 10}" class="drawing-label">0.85 f'c</text>
+      <text x="${forceAxisX + 10}" y="${compressionResultantY + 4}" class="drawing-label">Cc</text>
+      ${forceArrow(forceAxisX - 74, compressionResultantY, forceAxisX, "C", "steel-stress-line--compression")}
       ${compressionSteelArrows}
-      ${tensionSteelArrows}
-      <line x1="${stressPanelX + 16}" y1="${neutralAxisY}" x2="${stressPanelX + panelWidth - 16}" y2="${neutralAxisY}" class="neutral-axis" />
+      ${tensionForceArrows}
+      <text x="${panelXs[2] + 24}" y="${panelTop + panelHeight - 16}" class="drawing-note">${flexure.sectionCase === "flange" ? "Neutral axis in flange" : "Neutral axis in web"}</text>
 
       <line x1="${coupleAxisX}" y1="${compressionResultantY}" x2="${coupleAxisX}" y2="${tensionResultantY}" class="lever-arm-line" />
       <line x1="${coupleAxisX - 18}" y1="${compressionResultantY}" x2="${coupleAxisX + 18}" y2="${compressionResultantY}" class="lever-arm-cap" />
       <line x1="${coupleAxisX - 18}" y1="${tensionResultantY}" x2="${coupleAxisX + 18}" y2="${tensionResultantY}" class="lever-arm-cap" />
       <path d="M${coupleAxisX} ${compressionResultantY + 34} V ${compressionResultantY - 20}" class="force-arrow force-arrow--compression" marker-end="url(#forceArrowFlex)" />
       <path d="M${coupleAxisX} ${tensionResultantY - 34} V ${tensionResultantY + 20}" class="force-arrow force-arrow--tension" marker-end="url(#forceArrowFlex)" />
-      <text x="${coupleAxisX + 26}" y="${compressionResultantY + 4}" class="drawing-label">C</text>
-      <text x="${coupleAxisX + 26}" y="${tensionResultantY + 4}" class="drawing-label">T</text>
-      <text x="${coupleAxisX + 26}" y="${(compressionResultantY + tensionResultantY) / 2 + 4}" class="drawing-label">z</text>
+      <text x="${coupleAxisX + 24}" y="${compressionResultantY + 4}" class="drawing-label">C</text>
+      <text x="${coupleAxisX + 24}" y="${tensionResultantY + 4}" class="drawing-label">T</text>
+      <text x="${coupleAxisX + 24}" y="${(compressionResultantY + tensionResultantY) / 2 + 4}" class="drawing-label">z</text>
 
-      <rect x="${resultBoxX}" y="${panelTop + 54}" width="${panelWidth - 136}" height="154" rx="16" class="info-box" />
+      <rect x="${resultBoxX}" y="${panelTop + 58}" width="${panelWidth - 144}" height="156" rx="16" class="info-box" />
       ${resultRows
         .map(
           ([label, value], index) => `
-            <text x="${resultBoxX + 14}" y="${panelTop + 80 + index * 26}" class="drawing-label">${label}</text>
-            <text x="${resultBoxX + 64}" y="${panelTop + 80 + index * 26}" class="drawing-label">${value}</text>
+            <text x="${resultBoxX + 14}" y="${panelTop + 84 + index * 26}" class="drawing-label">${label}</text>
+            <text x="${resultBoxX + 58}" y="${panelTop + 84 + index * 26}" class="drawing-label">${value}</text>
           `
         )
         .join("")}
 
-      <text x="${margin}" y="${viewHeight - 26}" class="drawing-note">Bars, strains, stress resultants, and force locations are all drawn from the same multi-layer section response used in the flexural calculation module.</text>
+      <text x="${margin}" y="${viewHeight - 26}" class="drawing-note">The sketch follows the same section case used by the flexural solver, so the stress block switches automatically between flange-only and flange-plus-web compression.</text>
     </svg>
   `;
 }
