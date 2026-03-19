@@ -113,27 +113,35 @@ function formatLayerSchedule(layers) {
     .join(", ");
 }
 
-function buildFlexureSteps(result, geometry, reinforcement) {
+function layerEquationLabel(layer) {
+  return `${layer.family === "bottom" ? "\\mathrm{bot}" : "\\mathrm{top}"},${layer.index + 1}`;
+}
+
+function formatLayerResponses(layers, valueFormatter) {
+  return layers.map((layer) => valueFormatter(layer)).filter(Boolean);
+}
+
+function buildFlexureSteps(result, geometry, reinforcement, materials) {
   const compressionEquation =
     result.sectionCase === "flange"
       ? "C_c = 0.85 f'_c b_f a"
       : "C_c = 0.85 f'_c\\left[b_w a + (b_f - b_w)h_f\\right]";
 
-  const topLayerStressText = result.steelLayers
-    .filter((layer) => layer.family === "top")
-    .map(
-      (layer) =>
-        `f_{s,\\mathrm{top},${layer.index + 1}} = ${formatNumber(layer.stress, 1)}\\ \\mathrm{ksi}`
-    )
-    .join(",\\ ");
+  const compressionSubstitution =
+    result.sectionCase === "flange"
+      ? `C_c = 0.85(${formatNumber(materials.fc, 2)})(${formatNumber(geometry.bf, 2)})(${formatNumber(result.a, 3)}) = ${formatNumber(result.concreteMagnitude, 2)}\\ \\mathrm{k}`
+      : `C_c = 0.85(${formatNumber(materials.fc, 2)})\\left[(${formatNumber(geometry.bw, 2)})(${formatNumber(result.a, 3)}) + (${formatNumber(geometry.bf - geometry.bw, 2)})(${formatNumber(geometry.hf, 2)})\\right] = ${formatNumber(result.concreteMagnitude, 2)}\\ \\mathrm{k}`;
 
-  const bottomLayerStressText = result.steelLayers
-    .filter((layer) => layer.family === "bottom")
-    .map(
-      (layer) =>
-        `f_{s,\\mathrm{bot},${layer.index + 1}} = ${formatNumber(layer.stress, 1)}\\ \\mathrm{ksi}`
-    )
-    .join(",\\ ");
+  const layerStrainStressEquations = formatLayerResponses(result.steelLayers, (layer) => {
+    const label = layerEquationLabel(layer);
+    return `\\varepsilon_{s,${label}} = ${formatNumber(layer.strain, 5)},\\qquad f_{s,${label}} = ${formatNumber(layer.stress, 1)}\\ \\mathrm{ksi}`;
+  });
+
+  const layerForceEquations = formatLayerResponses(result.steelLayers, (layer) => {
+    const label = layerEquationLabel(layer);
+    const displacedStress = layer.depth <= result.a ? ` - 0.85(${formatNumber(materials.fc, 2)})` : "";
+    return `F_{s,${label}} = (${formatNumber(layer.area, 2)})\\left(${formatNumber(layer.stress, 1)}${displacedStress}\\right) = ${formatNumber(layer.netForce, 2)}\\ \\mathrm{k}`;
+  });
 
   return [
     {
@@ -166,7 +174,7 @@ function buildFlexureSteps(result, geometry, reinforcement) {
     {
       title: "Compression-block regime",
       narrative:
-        "The T-beam compression behavior is determined from the solved stress block depth. The app checks whether the equivalent stress block remains inside the flange or extends into the web.",
+        "The solved neutral axis defines whether the equivalent Whitney block remains in the flange or penetrates into the web.",
       equations: [
         "a = \\beta_1 c",
         "a \\le h_f\\ \\Rightarrow\\ \\text{flange compression only},\\qquad a > h_f\\ \\Rightarrow\\ \\text{flange + web compression}"
@@ -187,10 +195,7 @@ function buildFlexureSteps(result, geometry, reinforcement) {
         "\\varepsilon_{s,i} = 0.003\\left(\\frac{y_i - c}{c}\\right)",
         "f_{s,i} = \\operatorname{clamp}(E_s\\varepsilon_{s,i},\\ -f_y,\\ f_y)"
       ],
-      substitutions: [
-        bottomLayerStressText || "f_{s,\\mathrm{bot}} = 0",
-        topLayerStressText || "No top steel stresses to evaluate"
-      ],
+      substitutions: layerStrainStressEquations,
       values: [
         ["Maximum tension strain", `${formatNumber(result.maxTensionStrain, 5)}`],
         ["Tension-controlled check", result.tensionControlled ? "Yes, epsilon_t >= 0.005" : "No, epsilon_t < 0.005"]
@@ -202,10 +207,12 @@ function buildFlexureSteps(result, geometry, reinforcement) {
         "Concrete compression and the net steel layer forces are summed until the section reaches equilibrium. Steel layers inside the stress block are reduced by the displaced 0.85f'c concrete stress.",
       equations: [
         compressionEquation,
-        "\\sum T_i = C_c + \\sum C'_j"
+        "F_{s,i} = A_{s,i}\\left(f_{s,i} - 0.85f'_c\\right)\\quad\\text{for steel inside the compression block}",
+        "\\sum F = \\sum T_i - C_c - \\sum C_{s,j} = 0"
       ],
       substitutions: [
-        `C_c = ${formatNumber(result.concreteMagnitude, 2)}\\ \\mathrm{k}`,
+        compressionSubstitution,
+        ...layerForceEquations,
         `\\sum T_i = ${formatNumber(result.totalTension, 2)}\\ \\mathrm{k},\\quad \\sum C'_j = ${formatNumber(
           result.compressionSteelMagnitude,
           2
@@ -220,17 +227,20 @@ function buildFlexureSteps(result, geometry, reinforcement) {
     {
       title: "Nominal moment resistance",
       narrative:
-        "The nominal moment is assembled from the signed internal forces acting at their actual depths. The resulting lever arm is measured between the compression and tension resultants.",
+        "Once the force couple is in equilibrium, the nominal moment is reported from the compression and tension resultants and their lever arm.",
       equations: [
-        "M_n = \\left|\\sum F_i y_i\\right|",
-        "z = y_T - y_C"
+        "y_C = \\frac{C_cy_{Cc} + \\sum C_{s,j}y_j}{C_c + \\sum C_{s,j}}",
+        "y_T = \\frac{\\sum T_iy_i}{\\sum T_i}",
+        "z = y_T - y_C",
+        "M_n = Tz"
       ],
       substitutions: [
         `y_C = ${formatNumber(result.compressionResultantDepth, 2)}\\ \\mathrm{in},\\quad y_T = ${formatNumber(
           result.tensionResultantDepth,
           2
         )}\\ \\mathrm{in},\\quad z = ${formatNumber(result.leverArm, 2)}\\ \\mathrm{in}`,
-        `M_n = ${formatNumber(result.mnKipFt, 2)}\\ \\mathrm{k\\!-\!ft},\\quad \\phi M_n = 0.90\\times ${formatNumber(
+        `M_n = \\frac{(${formatNumber(result.totalTension, 2)})(${formatNumber(result.leverArm, 2)})}{12} = ${formatNumber(result.mnKipFt, 2)}\\ \\mathrm{k\\!-\!ft}`,
+        `\\phi M_n = 0.90\\times ${formatNumber(
           result.mnKipFt,
           2
         )} = ${formatNumber(result.phiMnKipFt, 2)}\\ \\mathrm{k\\!-\!ft}`
@@ -300,6 +310,6 @@ export function computeFlexuralCapacity({ state, geometry, reinforcement }) {
     compressionBlockBelowFlange: sectionCase === "web"
   };
 
-  result.steps = buildFlexureSteps(result, geometry, reinforcement);
+  result.steps = buildFlexureSteps(result, geometry, reinforcement, materials);
   return result;
 }

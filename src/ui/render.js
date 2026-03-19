@@ -313,7 +313,7 @@ export function renderApp(snapshot) {
 
       <div class="top-workflow-grid">
         <aside class="sidebar">
-          <details class="panel accordion-panel" open>
+          <details class="panel accordion-panel" data-panel-id="setup" open>
             ${renderPanelSummary(
               `<p class="panel-kicker">01 Section Setup</p><h2>Project and report branding</h2><p>Title block, company name, and logo used in the report package.</p>`,
               `
@@ -329,7 +329,7 @@ export function renderApp(snapshot) {
             )}
           </details>
 
-          <details class="panel accordion-panel" open>
+          <details class="panel accordion-panel" data-panel-id="geometry" open>
             ${renderPanelSummary(
               `<p class="panel-kicker">02 Geometry Inputs</p><h2>T-beam section definition</h2><p>Core flange, web, cover, and effective-depth controls.</p>`,
               `
@@ -347,7 +347,7 @@ export function renderApp(snapshot) {
                   }
                 </div>
                 <div class="derived-strip">
-                  ${metricCard("Auto d", `${formatNumber(reinforcement.effectiveDepthAuto, 2)} in`, "Bottom layer centroid")}
+                  ${metricCard("Auto d", `${formatNumber(reinforcement.effectiveDepthAuto, 2)} in`, "Tension steel centroid")}
                   ${metricCard("Top steel d'", `${formatNumber(geometry.dPrime, 2)} in`, "Top layer centroid")}
                   ${metricCard("Neutral axis c", `${formatNumber(flexure.c, 2)} in`, "Derived")}
                   ${metricCard("Compression block a", `${formatNumber(flexure.a, 2)} in`, "Derived")}
@@ -356,7 +356,7 @@ export function renderApp(snapshot) {
             )}
           </details>
 
-          <details class="panel accordion-panel" open>
+          <details class="panel accordion-panel" data-panel-id="materials" open>
             ${renderPanelSummary(
               `<p class="panel-kicker">03 Material Inputs</p><h2>Concrete and reinforcing steel</h2><p>Material properties used throughout flexure, shear, drawings, and report generation.</p>`,
               `
@@ -369,7 +369,7 @@ export function renderApp(snapshot) {
             )}
           </details>
 
-          <details class="panel accordion-panel" open>
+          <details class="panel accordion-panel" data-panel-id="reinforcement" open>
             ${renderPanelSummary(
               `<p class="panel-kicker">04 Reinforcement Inputs</p><h2>Layer-based reinforcement model</h2><p>Multiple top and bottom rows are supported and used directly in the drawings and strain-compatibility solver.</p>`,
               `
@@ -416,7 +416,7 @@ export function renderApp(snapshot) {
             )}
           </details>
 
-          <details class="panel accordion-panel">
+          <details class="panel accordion-panel" data-panel-id="shear-assumptions">
             ${renderPanelSummary(
               `<p class="panel-kicker">05 Shear Assumptions</p><h2>AASHTO beta and theta</h2><p>Editable LRFD parameters for capacity-oriented shear evaluation.</p>`,
               `
@@ -483,7 +483,7 @@ export function renderApp(snapshot) {
       </div>
 
       <main class="workspace">
-        <details class="panel workspace-panel" open id="flexural-capacity">
+        <details class="panel workspace-panel" data-panel-id="flexural-capacity" open id="flexural-capacity">
           ${renderPanelSummary(
             `<p class="panel-kicker">06 Flexural Capacity</p><h2>Strain compatibility and moment resistance</h2><p>Layer-by-layer steel response, compression-block case, and nominal/design moment capacity.</p>`,
             `
@@ -503,7 +503,7 @@ export function renderApp(snapshot) {
                         ? "C_c = 0.85f'_c b_f a"
                         : "C_c = 0.85f'_c\\left[b_w a + (b_f - b_w)h_f\\right]"
                     )}
-                    ${equationBlock("M_n = \\left|\\sum F_i y_i\\right|")}
+                    ${equationBlock("M_n = Tz")}
                   </div>
                 </section>
                 <section class="subpanel">
@@ -513,6 +513,7 @@ export function renderApp(snapshot) {
                       ["Top steel area As'", `${formatNumber(reinforcement.compressionArea, 2)} in²`],
                       ["Automatic effective depth d", `${formatNumber(geometry.d, 2)} in`],
                       ["Top steel depth d'", `${formatNumber(geometry.dPrime, 2)} in`],
+                      ["Compression block case", flexure.sectionCase === "flange" ? "Within flange" : "Extends into web"],
                       ["Maximum tension strain", `${formatNumber(flexure.maxTensionStrain, 5)}`],
                       ["Design moment phiMn", `${formatNumber(flexure.phiMnKipFt, 2)} k-ft`]
                     ])}
@@ -523,7 +524,7 @@ export function renderApp(snapshot) {
           )}
         </details>
 
-        <details class="panel workspace-panel" open id="shear-capacity">
+        <details class="panel workspace-panel" data-panel-id="shear-capacity" open id="shear-capacity">
           ${renderPanelSummary(
             `<p class="panel-kicker">07 Shear Capacity</p><h2>Concrete and stirrup resistance</h2><p>Concrete contribution, stirrup contribution, LRFD limit checks, and design shear capacity.</p>`,
             `
@@ -559,7 +560,7 @@ export function renderApp(snapshot) {
           )}
         </details>
 
-        <details class="panel workspace-panel" open id="engineering-diagrams">
+        <details class="panel workspace-panel" data-panel-id="engineering-diagrams" open id="engineering-diagrams">
           ${renderPanelSummary(
             `<p class="panel-kicker">08 Engineering Diagrams</p><h2>Flexure and shear detail figures</h2><p>Textbook-style diagrams tied directly to the member geometry and calculation outputs.</p>`,
             `
@@ -577,7 +578,7 @@ export function renderApp(snapshot) {
           )}
         </details>
 
-        <details class="panel workspace-panel" open id="calculations">
+        <details class="panel workspace-panel" data-panel-id="calculations" open id="calculations">
           ${renderPanelSummary(
             `<p class="panel-kicker">09 Step-by-Step Calculations</p><h2>Governing equations, substitutions, and intermediate values</h2><p>Every major design stage is shown explicitly with professional equation rendering.</p>`,
             `
@@ -589,7 +590,7 @@ export function renderApp(snapshot) {
           )}
         </details>
 
-        <details class="panel workspace-panel" open id="report-panel">
+        <details class="panel workspace-panel" data-panel-id="report-panel" open id="report-panel">
           ${renderPanelSummary(
             `<p class="panel-kicker">10 Report</p><h2>Open, save, and print the engineering package</h2><p>The report is a standalone branded calculation package with drawings, equations, summaries, and your uploaded logo.</p>`,
             `

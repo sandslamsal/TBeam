@@ -9,6 +9,67 @@ const app = document.getElementById("app");
 
 let state = loadState();
 
+function captureViewState() {
+  const activeElement = document.activeElement;
+  const activeField =
+    activeElement instanceof HTMLElement ? activeElement.closest("[data-path]") : null;
+
+  return {
+    scrollX: window.scrollX,
+    scrollY: window.scrollY,
+    activePath: activeField?.dataset.path ?? "",
+    selectionStart:
+      activeField instanceof HTMLInputElement || activeField instanceof HTMLTextAreaElement
+        ? activeField.selectionStart
+        : null,
+    selectionEnd:
+      activeField instanceof HTMLInputElement || activeField instanceof HTMLTextAreaElement
+        ? activeField.selectionEnd
+        : null,
+    openPanels: Object.fromEntries(
+      Array.from(document.querySelectorAll("details[data-panel-id]")).map((panel) => [
+        panel.dataset.panelId,
+        panel.open
+      ])
+    )
+  };
+}
+
+function restoreViewState(viewState) {
+  if (!viewState) {
+    return;
+  }
+
+  Object.entries(viewState.openPanels || {}).forEach(([panelId, open]) => {
+    const panel = document.querySelector(`details[data-panel-id="${panelId}"]`);
+    if (panel) {
+      panel.open = open;
+    }
+  });
+
+  if (viewState.activePath) {
+    const nextField = document.querySelector(`[data-path="${CSS.escape(viewState.activePath)}"]`);
+    if (nextField instanceof HTMLElement) {
+      nextField.focus({ preventScroll: true });
+      if (
+        (nextField instanceof HTMLInputElement || nextField instanceof HTMLTextAreaElement) &&
+        viewState.selectionStart != null &&
+        viewState.selectionEnd != null
+      ) {
+        try {
+          nextField.setSelectionRange(viewState.selectionStart, viewState.selectionEnd);
+        } catch {
+          // Some date/number inputs do not support programmatic selection ranges.
+        }
+      }
+    }
+  }
+
+  window.requestAnimationFrame(() => {
+    window.scrollTo(viewState.scrollX, viewState.scrollY);
+  });
+}
+
 function loadState() {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -51,9 +112,11 @@ function persistAndRender() {
 }
 
 function render() {
+  const viewState = captureViewState();
   state = normalizeState(state);
   const snapshot = runAnalysis(state);
   app.innerHTML = renderApp(snapshot);
+  restoreViewState(viewState);
 }
 
 function parseInputValue(element, previousValue) {
@@ -210,7 +273,6 @@ function bootstrap() {
   }
 
   render();
-  document.addEventListener("input", handleInput);
   document.addEventListener("change", handleInput);
   document.addEventListener("change", handleUpload);
   document.addEventListener("click", handleClick);

@@ -32,7 +32,7 @@ function buildShearSteps(result, geometry, reinforcement, state) {
     {
       title: "Concrete shear contribution",
       narrative:
-        "Concrete shear resistance is evaluated using the AASHTO LRFD beta-theta expression for section capacity.",
+        "Concrete shear resistance is evaluated using the LRFD beta-theta expression with the effective web width and derived shear depth.",
       equations: ["V_c = 0.0316\\beta\\sqrt{f'_c}b_w d_v"],
       substitutions: [
         `V_c = 0.0316(${formatNumber(result.beta, 2)})\\sqrt{${formatNumber(
@@ -67,12 +67,15 @@ function buildShearSteps(result, geometry, reinforcement, state) {
     {
       title: "Nominal and design shear resistance",
       narrative:
-        "The total nominal shear is checked against the LRFD web crushing cap and then reduced by phi to report the design capacity.",
+        "The concrete and stirrup contributions are added, checked against the LRFD web crushing cap, and then reduced by phi to report the design capacity.",
       equations: [
+        "V_{n,\\mathrm{raw}} = V_c + V_s",
         "V_n = \\min\\left(V_c + V_s,\\ 0.25f'_c b_w d_v\\right)",
         "\\phi V_n = 0.90V_n"
       ],
       substitutions: [
+        `V_{n,\\mathrm{raw}} = ${formatNumber(result.vc, 2)} + ${formatNumber(result.vs, 2)} = ${formatNumber(result.vnRaw, 2)}\\ \\mathrm{k}`,
+        `V_{\\mathrm{limit}} = 0.25(${formatNumber(state.materials.fc, 2)})(${formatNumber(geometry.bw, 2)})(${formatNumber(result.dv, 2)}) = ${formatNumber(result.vnLimit, 2)}\\ \\mathrm{k}`,
         `V_n = \\min\\left(${formatNumber(result.vnRaw, 2)},\\ ${formatNumber(
           result.vnLimit,
           2
