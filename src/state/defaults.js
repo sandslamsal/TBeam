@@ -37,6 +37,9 @@ export const DEFAULT_STATE = {
     stirrupBarSize: "#4",
     stirrupLegs: 2,
     stirrupSpacing: 8,
+    edgeStirrupSpacing: 6,
+    middleStirrupSpacing: 10,
+    edgeZoneLength: 24,
     shearBeta: 2.31,
     shearThetaDeg: 34
   }

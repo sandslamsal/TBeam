@@ -312,7 +312,7 @@ export function renderApp(snapshot) {
       </nav>
 
       <div class="top-workflow-grid">
-        <aside class="sidebar">
+        <section class="top-input-stack top-input-stack--primary">
           <details class="panel accordion-panel" data-panel-id="setup" open>
             ${renderPanelSummary(
               `<p class="panel-kicker">01 Section Setup</p><h2>Project and report branding</h2><p>Title block, company name, and logo used in the report package.</p>`,
@@ -355,12 +355,14 @@ export function renderApp(snapshot) {
               `
             )}
           </details>
+        </section>
 
+        <section class="top-input-stack top-input-stack--secondary">
           <details class="panel accordion-panel" data-panel-id="materials" open>
             ${renderPanelSummary(
               `<p class="panel-kicker">03 Material Inputs</p><h2>Concrete and reinforcing steel</h2><p>Material properties used throughout flexure, shear, drawings, and report generation.</p>`,
               `
-                <div class="field-grid field-grid--two">
+                <div class="field-grid field-grid--three">
                   ${numberField("Concrete strength f'c (ksi)", "materials.fc", state.materials.fc)}
                   ${numberField("Steel yield fy (ksi)", "materials.fy", state.materials.fy)}
                   ${numberField("Steel modulus Es (ksi)", "materials.es", state.materials.es, { step: "1" })}
@@ -399,11 +401,17 @@ export function renderApp(snapshot) {
                         <p>Stirrups and LRFD shear input used for the beam elevation and shear calculations.</p>
                       </div>
                     </div>
-                    <div class="field-grid field-grid--two">
+                    <div class="field-grid field-grid--three">
                       ${selectField("Stirrup bar size", "reinforcement.stirrupBarSize", state.reinforcement.stirrupBarSize, BAR_OPTIONS)}
                       ${numberField("Stirrup legs", "reinforcement.stirrupLegs", state.reinforcement.stirrupLegs, { step: "1", min: "0" })}
                       ${numberField("Stirrup spacing s (in)", "reinforcement.stirrupSpacing", state.reinforcement.stirrupSpacing)}
                     </div>
+                    <div class="field-grid field-grid--three">
+                      ${numberField("Edge zone spacing (in)", "reinforcement.edgeStirrupSpacing", state.reinforcement.edgeStirrupSpacing)}
+                      ${numberField("Middle zone spacing (in)", "reinforcement.middleStirrupSpacing", state.reinforcement.middleStirrupSpacing)}
+                      ${numberField("Edge zone length (in)", "reinforcement.edgeZoneLength", state.reinforcement.edgeZoneLength)}
+                    </div>
+                    <div class="equation-note">Edge and middle stirrup spacing affect only the shear elevation figure. Shear capacity continues to use the single design spacing ${formatNumber(state.reinforcement.stirrupSpacing, 2)} in.</div>
                   </section>
                 </div>
                 <div class="derived-strip derived-strip--tall">
@@ -431,14 +439,14 @@ export function renderApp(snapshot) {
               `
             )}
           </details>
-        </aside>
+        </section>
 
         <section class="top-figure-column">
           <article class="panel figure-panel" id="section-figure">
             <div class="panel-head panel-head--compact">
               <div>
                 <p class="panel-kicker">05 Parametric Section Figure</p>
-                <h2>Main T-beam engineering figure</h2>
+                <h2>Main T-Beam Section</h2>
               </div>
             </div>
             ${renderSectionDrawing(snapshot)}
