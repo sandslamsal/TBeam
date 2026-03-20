@@ -155,6 +155,36 @@ function renderStepCards(title, steps) {
   `;
 }
 
+function renderReportMetadataPreview(project) {
+  const designer = project.designer || "SL";
+  const checkedBy = project.checkedBy || "N/A";
+
+  return `
+    <div class="report-meta-grid">
+      <article class="report-meta-card">
+        <div class="report-meta-card__row">
+          <span>Designer</span>
+          <strong>${escapeHtml(designer)}</strong>
+        </div>
+        <div class="report-meta-card__row">
+          <span>Date</span>
+          <strong>${escapeHtml(project.date || "None")}</strong>
+        </div>
+      </article>
+      <article class="report-meta-card">
+        <div class="report-meta-card__row">
+          <span>Checked By / QC</span>
+          <strong>${escapeHtml(checkedBy)}</strong>
+        </div>
+        <div class="report-meta-card__row">
+          <span>Date</span>
+          <strong>${escapeHtml(project.checkedDate || project.date || "None")}</strong>
+        </div>
+      </article>
+    </div>
+  `;
+}
+
 function renderPanelSummary(summary, body) {
   return `
     <summary class="accordion-summary">
@@ -662,14 +692,11 @@ export function renderApp(snapshot) {
                 </article>
                 <article class="subpanel">
                   <h3>Report title block</h3>
+                  ${renderReportMetadataPreview(state.project)}
                   <div class="kv-grid">
                     ${keyValueRows([
                       ["Project", state.project.name],
-                      ["Designer", state.project.designer],
-                      ["Checked by / QC", state.project.checkedBy || "None"],
-                      ["QC date", state.project.checkedDate || "None"],
                       ["Company", state.project.companyName || "None"],
-                      ["Date", state.project.date],
                       ["Logo", state.project.companyLogoDataUrl ? "Included in report header" : "Not uploaded"],
                       ["Notes", state.project.notes || "None"]
                     ])}

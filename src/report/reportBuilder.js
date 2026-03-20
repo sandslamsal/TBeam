@@ -86,7 +86,26 @@ function layerScheduleRows(layers, familyLabel) {
   ]);
 }
 
+function renderTitleCard(label, name, dateValue) {
+  return `
+    <article class="report-title-card">
+      <div class="report-title-card__row">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(name)}</strong>
+      </div>
+      <div class="report-title-card__row">
+        <span>Date</span>
+        <strong>${escapeHtml(dateValue)}</strong>
+      </div>
+    </article>
+  `;
+}
+
 export function buildReportHtml(snapshot, autoPrint = false) {
+  const designerName = snapshot.state.project.designer || "SL";
+  const checkedByName = snapshot.state.project.checkedBy || "N/A";
+  const designerDate = snapshot.state.project.date || "";
+  const checkedDate = snapshot.state.project.checkedDate || snapshot.state.project.date || "";
   const geometryRows = [
     ["Flange width bf", `${formatNumber(snapshot.geometry.bf, 2)} in`],
     ["Flange thickness hf", `${formatNumber(snapshot.geometry.hf, 2)} in`],
@@ -215,18 +234,28 @@ export function buildReportHtml(snapshot, autoPrint = false) {
         }
         .report-title-block {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-          gap: 12px 18px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
           margin-top: 18px;
-          padding-top: 18px;
-          border-top: 1px solid var(--line);
         }
-        .report-title-block div {
+        .report-company {
+          margin: 0 0 12px;
+          color: var(--muted);
+          font-weight: 600;
+        }
+        .report-title-card {
+          min-width: 0;
+          padding-top: 16px;
+          border-top: 1px solid var(--line);
+          display: grid;
+          gap: 12px;
+        }
+        .report-title-card__row {
           display: grid;
           gap: 4px;
           min-width: 0;
         }
-        .report-title-block span {
+        .report-title-card span {
           color: var(--muted);
           font-size: 0.82rem;
           text-transform: uppercase;
@@ -543,7 +572,7 @@ export function buildReportHtml(snapshot, autoPrint = false) {
             height: 28mm;
           }
           .report-title-block {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
           .report-grid,
           .report-layer-grid {
@@ -593,6 +622,9 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           .report-hero {
             grid-template-columns: 1fr;
           }
+          .report-title-block {
+            grid-template-columns: 1fr;
+          }
         }
       </style>
     </head>
@@ -603,14 +635,11 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           <div>
             <p class="report-kicker">Cast-in-Place Reinforced Concrete T-Beam Design Report</p>
             <h1>${escapeHtml(snapshot.state.project.name || "TBeam Design Package")}</h1>
+            <p class="report-company">${escapeHtml(snapshot.state.project.companyName || "Bridge Structures Group")}</p>
             <p>This report summarizes flexural and shear capacity calculations per AASHTO LRFD Bridge Design Specifications, 9th Edition.</p>
             <div class="report-title-block">
-              <div><span>Designer</span><strong>${escapeHtml(snapshot.state.project.designer || "Not provided")}</strong></div>
-              <div><span>Checked By / QC</span><strong>${escapeHtml(snapshot.state.project.checkedBy || "Not provided")}</strong></div>
-              <div><span>Company</span><strong>${escapeHtml(snapshot.state.project.companyName || "Not provided")}</strong></div>
-              <div><span>Date</span><strong>${escapeHtml(snapshot.state.project.date || "")}</strong></div>
-              <div><span>QC Date</span><strong>${escapeHtml(snapshot.state.project.checkedDate || "")}</strong></div>
-              <div><span>Section</span><strong>T-Beam Flexure and Shear Capacity</strong></div>
+              ${renderTitleCard("Designer", designerName, designerDate)}
+              ${renderTitleCard("Checked By / QC", checkedByName, checkedDate)}
             </div>
           </div>
         </header>

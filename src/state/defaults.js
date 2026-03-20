@@ -3,9 +3,9 @@ export const STORAGE_KEY = "tbeam-project-state";
 export const DEFAULT_STATE = {
   project: {
     name: "TBeam Trial Design",
-    designer: "Bridge Structures Group",
+    designer: "SL",
     date: new Date().toISOString().slice(0, 10),
-    checkedBy: "",
+    checkedBy: "N/A",
     checkedDate: new Date().toISOString().slice(0, 10),
     companyName: "Bridge Structures Group",
     companyLogoDataUrl: "",

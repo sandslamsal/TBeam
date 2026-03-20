@@ -639,6 +639,40 @@ details[open] > summary .accordion-chevron {
   margin-top: 18px;
 }
 
+.report-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.report-meta-card {
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(248, 242, 233, 0.92);
+  display: grid;
+  gap: 12px;
+}
+
+.report-meta-card__row {
+  display: grid;
+  gap: 4px;
+}
+
+.report-meta-card__row span {
+  color: var(--muted);
+  font: 600 0.76rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.report-meta-card__row strong {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
 .report-outline div {
   padding: 12px 14px;
   border-radius: 16px;

@@ -92,12 +92,18 @@ export function renderFlexureDrawing(snapshot) {
   const sectionBoxX = panelXs[0] + 18;
   const sectionBoxY = panelTop + panelHeight - 74;
   const sectionBoxWidth = panelWidth - 36;
+  const sectionBoxRows = [
+    `b = ${formatNumber(geometry.bf, 1)} in`,
+    `hf = ${formatNumber(geometry.hf, 1)} in`,
+    `d = ${formatNumber(geometry.d, 1)} in`
+  ];
 
   const strainPanelX = panelXs[1];
   const strainAxisX = strainPanelX + panelWidth * 0.52;
   const strainTopX = strainAxisX - 64;
   const strainBottomX = strainAxisX + 88;
   const strainBottomConnectorEnd = strainBottomX - 10;
+  const strainLabelX = strainPanelX + panelWidth - 46;
   const strainBoxX = strainPanelX + 20;
   const strainBoxY = panelTop + panelHeight - 88;
   const strainBoxWidth = panelWidth - 40;
@@ -165,22 +171,23 @@ export function renderFlexureDrawing(snapshot) {
       ${verticalDimension(panelXs[0] + panelWidth - 20, sectionTop, sectionTop + geometry.d * sectionScale, panelXs[0] + panelWidth - 46, "d")}
       ${leader(panelXs[0] + panelWidth - 34, neutralAxisY, panelXs[0] + panelWidth - 10, panelXs[0] + panelWidth - 4, neutralAxisY - 12, "N.A.")}
       ${leader(sectionCenter, sectionBottom - 8, sectionCenter + 30, sectionCenter + 48, sectionBottom + 18, "As")}
-      <rect x="${sectionBoxX}" y="${sectionBoxY}" width="${sectionBoxWidth}" height="52" rx="14" class="info-box" />
-      <line x1="${sectionBoxX + sectionBoxWidth / 3}" y1="${sectionBoxY + 10}" x2="${sectionBoxX + sectionBoxWidth / 3}" y2="${sectionBoxY + 40}" class="result-divider" />
-      <line x1="${sectionBoxX + (sectionBoxWidth * 2) / 3}" y1="${sectionBoxY + 10}" x2="${sectionBoxX + (sectionBoxWidth * 2) / 3}" y2="${sectionBoxY + 40}" class="result-divider" />
-      <text x="${sectionBoxX + 16}" y="${sectionBoxY + 23}" class="drawing-label drawing-label--muted">b</text>
-      <text x="${sectionBoxX + sectionBoxWidth / 3 - 12}" y="${sectionBoxY + 23}" class="drawing-label result-value">${formatNumber(geometry.bf, 1)} in</text>
-      <text x="${sectionBoxX + sectionBoxWidth / 3 + 16}" y="${sectionBoxY + 23}" class="drawing-label drawing-label--muted">hf</text>
-      <text x="${sectionBoxX + (sectionBoxWidth * 2) / 3 - 12}" y="${sectionBoxY + 23}" class="drawing-label result-value">${formatNumber(geometry.hf, 1)} in</text>
-      <text x="${sectionBoxX + (sectionBoxWidth * 2) / 3 + 16}" y="${sectionBoxY + 23}" class="drawing-label drawing-label--muted">d</text>
-      <text x="${sectionBoxX + sectionBoxWidth - 14}" y="${sectionBoxY + 23}" class="drawing-label result-value">${formatNumber(geometry.d, 1)} in</text>
+      <rect x="${sectionBoxX}" y="${sectionBoxY}" width="${sectionBoxWidth}" height="64" rx="14" class="info-box" />
+      ${sectionBoxRows
+        .map(
+          (row, index) => `
+            <text x="${sectionBoxX + 16}" y="${sectionBoxY + 21 + index * 18}" class="drawing-label">${row}</text>
+          `
+        )
+        .join("")}
 
       <line x1="${strainAxisX}" y1="${sectionTop}" x2="${strainAxisX}" y2="${sectionBottom}" class="stress-axis" />
       <line x1="${strainTopX}" y1="${sectionTop}" x2="${strainBottomX}" y2="${sectionBottom}" class="strain-guide" />
       <line x1="${strainAxisX}" y1="${sectionBottom}" x2="${strainBottomConnectorEnd}" y2="${sectionBottom}" class="dim-extension" />
       <line x1="${strainPanelX + 18}" y1="${neutralAxisY}" x2="${strainPanelX + panelWidth - 18}" y2="${neutralAxisY}" class="neutral-axis" />
-      ${verticalDimension(strainPanelX + panelWidth - 34, sectionTop, compressionBottomY, strainPanelX + panelWidth - 58, "a")}
-      ${verticalDimension(strainPanelX + panelWidth - 80, sectionTop, neutralAxisY, strainPanelX + panelWidth - 58, "c")}
+      <line x1="${strainAxisX + 12}" y1="${neutralAxisY}" x2="${strainLabelX - 12}" y2="${neutralAxisY}" class="dim-extension" />
+      <line x1="${strainAxisX + 12}" y1="${compressionBottomY}" x2="${strainLabelX - 12}" y2="${compressionBottomY}" class="dim-extension" />
+      <text x="${strainLabelX}" y="${neutralAxisY - 4}" class="drawing-label">c</text>
+      <text x="${strainLabelX}" y="${compressionBottomY - 4}" class="drawing-label">a</text>
       <text x="${strainTopX - 10}" y="${sectionTop - 12}" class="drawing-label">ec</text>
       <text x="${strainBottomConnectorEnd + 8}" y="${sectionBottom - 8}" class="drawing-label">et</text>
       <rect x="${strainBoxX}" y="${strainBoxY}" width="${strainBoxWidth}" height="58" rx="14" class="info-box" />
