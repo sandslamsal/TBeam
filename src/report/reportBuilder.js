@@ -66,6 +66,15 @@ function renderStepTable(title, steps) {
   `;
 }
 
+function renderDrawingFigure(title, svgMarkup) {
+  return `
+    <figure class="report-figure">
+      <figcaption>${escapeHtml(title)}</figcaption>
+      ${svgMarkup}
+    </figure>
+  `;
+}
+
 function layerScheduleRows(layers, familyLabel) {
   if (!layers.length) {
     return [[`${familyLabel} layers`, "None"]];
@@ -257,6 +266,22 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           display: grid;
           gap: 18px;
         }
+        .report-figure {
+          margin: 0;
+          padding: 18px;
+          border: 1px solid var(--line);
+          border-radius: 20px;
+          background: white;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .report-figure figcaption {
+          margin: 0 0 12px;
+          color: var(--muted);
+          font: 600 0.84rem "IBM Plex Mono", monospace;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
         .report-step-stack {
           display: grid;
           gap: 16px;
@@ -286,12 +311,228 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           background: white;
           overflow-x: auto;
         }
+        .engineering-svg {
+          display: block;
+          width: 100%;
+          height: auto;
+          overflow: visible;
+          background: transparent;
+          color-scheme: light;
+        }
+        .section-outline {
+          fill: none;
+          stroke: #132740;
+          stroke-width: 2.2;
+        }
+        .section-fill {
+          fill: rgba(29, 107, 120, 0.08);
+        }
+        .compression-block {
+          fill: rgba(198, 97, 43, 0.18);
+          stroke: rgba(198, 97, 43, 0.45);
+          stroke-width: 1.4;
+        }
+        .bar {
+          stroke: #10253a;
+          stroke-width: 1.6;
+        }
+        .bar--bottom {
+          fill: rgba(29, 107, 120, 0.78);
+        }
+        .bar--top {
+          fill: rgba(198, 97, 43, 0.74);
+        }
+        .stirrup-outline,
+        .stirrup-line {
+          fill: none;
+          stroke: #1d6b78;
+          stroke-width: 2.1;
+        }
+        .neutral-axis,
+        .effective-depth-line,
+        .stress-axis,
+        .lever-arm-line,
+        .force-arrow,
+        .dim-arrow,
+        .dim-extension,
+        .callout-line,
+        .shear-crack,
+        .zone-divider,
+        .result-divider,
+        .panel-divider {
+          stroke: #10253a;
+          stroke-width: 1.8;
+          fill: none;
+        }
+        .neutral-axis {
+          stroke: #1d6b78;
+          stroke-dasharray: 7 6;
+        }
+        .effective-depth-line {
+          stroke: #c8612b;
+          stroke-dasharray: 6 4;
+        }
+        .lever-arm-line,
+        .lever-arm-cap {
+          stroke: #c8612b;
+          stroke-width: 1.8;
+        }
+        .force-arrow--compression {
+          color: #c8612b;
+        }
+        .force-arrow--tension {
+          color: #1d6b78;
+        }
+        .dim-arrow {
+          stroke: rgba(16, 37, 58, 0.56);
+        }
+        .dim-extension,
+        .callout-line {
+          stroke: rgba(16, 37, 58, 0.34);
+          stroke-width: 1.3;
+        }
+        .panel-divider,
+        .zone-divider,
+        .result-divider {
+          stroke: rgba(16, 37, 58, 0.22);
+          stroke-dasharray: 6 5;
+          stroke-width: 1.2;
+        }
+        .shear-crack {
+          stroke: #c8612b;
+          stroke-width: 2.4;
+          stroke-dasharray: 8 6;
+        }
+        .drawing-frame {
+          fill: white;
+          stroke: rgba(16, 37, 58, 0.12);
+        }
+        .diagram-panel,
+        .info-box {
+          fill: rgba(248, 242, 233, 0.92);
+          stroke: rgba(16, 37, 58, 0.12);
+        }
+        .zone-shade {
+          fill: rgba(16, 37, 58, 0.04);
+        }
+        .drawing-title {
+          font: 700 17px "IBM Plex Sans", sans-serif;
+          fill: #10253a;
+        }
+        .drawing-subtitle,
+        .drawing-panel-title {
+          font: 500 12px "IBM Plex Mono", monospace;
+          fill: #58697b;
+        }
+        .drawing-label,
+        .dim-text,
+        .drawing-note {
+          font: 500 13px "IBM Plex Mono", monospace;
+          fill: #37495b;
+        }
+        .drawing-label--muted {
+          fill: #617284;
+        }
+        .drawing-label--end,
+        .dim-text--end,
+        .result-value {
+          text-anchor: end;
+        }
+        .dim-text--center {
+          text-anchor: middle;
+        }
+        .dim-text--middle {
+          dominant-baseline: middle;
+        }
+        .drawing-note {
+          font-size: 12px;
+        }
+        .rebar-line {
+          stroke-width: 3;
+        }
+        .rebar-line--top {
+          stroke: rgba(198, 97, 43, 0.78);
+        }
+        .rebar-line--bottom {
+          stroke: rgba(29, 107, 120, 0.82);
+        }
+        .strain-guide {
+          stroke: rgba(29, 107, 120, 0.74);
+          stroke-width: 2.2;
+          fill: none;
+        }
+        .steel-stress-line {
+          stroke-width: 2.2;
+        }
+        .steel-stress-line--compression {
+          stroke: rgba(198, 97, 43, 0.8);
+          color: rgba(198, 97, 43, 0.8);
+        }
+        .steel-stress-line--tension {
+          stroke: rgba(29, 107, 120, 0.9);
+          color: rgba(29, 107, 120, 0.9);
+        }
+        @page {
+          size: A4 portrait;
+          margin: 12mm;
+        }
         @media print {
-          body { background: white; }
-          .report-shell { padding: 0; }
+          html,
+          body {
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .report-shell {
+            max-width: 186mm;
+            padding: 0;
+          }
           .report-card,
           .report-section,
-          .report-hero { break-inside: avoid; box-shadow: none; }
+          .report-hero,
+          .report-figure,
+          .report-step {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            box-shadow: none;
+            background: white;
+          }
+          .report-card,
+          .report-section,
+          .report-hero,
+          .report-figure {
+            border-color: rgba(18, 38, 58, 0.18);
+          }
+          .report-grid,
+          .report-layer-grid {
+            gap: 12px;
+          }
+          .report-drawing-grid {
+            gap: 12px;
+          }
+          .report-section__header,
+          .report-hero h1,
+          .report-step h3 {
+            break-after: avoid;
+            page-break-after: avoid;
+          }
+          .engineering-svg {
+            background: white !important;
+          }
+          .drawing-frame,
+          .diagram-panel,
+          .info-box {
+            fill: white !important;
+          }
+          .section-fill {
+            fill: rgba(29, 107, 120, 0.05) !important;
+          }
+          .compression-block {
+            fill: rgba(198, 97, 43, 0.12) !important;
+          }
+          .zone-shade {
+            fill: rgba(16, 37, 58, 0.03) !important;
+          }
         }
       </style>
     </head>
@@ -364,9 +605,9 @@ export function buildReportHtml(snapshot, autoPrint = false) {
             <h2>Parametric Figure Package</h2>
           </div>
           <div class="report-drawing-grid">
-            ${renderSectionDrawing(snapshot)}
-            ${renderFlexureDrawing(snapshot)}
-            ${renderShearDrawing(snapshot)}
+            ${renderDrawingFigure("Main T-Beam Section", renderSectionDrawing(snapshot))}
+            ${renderDrawingFigure("Flexural Strain Compatibility", renderFlexureDrawing(snapshot))}
+            ${renderDrawingFigure("Shear Reinforcement Elevation", renderShearDrawing(snapshot))}
           </div>
         </section>
 

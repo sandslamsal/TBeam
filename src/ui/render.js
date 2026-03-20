@@ -212,7 +212,14 @@ function renderLayerEditor(title, groupKey, layers, spacingPath, spacingValue, l
                 .map(
                   (layer, index) => `
                     <article class="layer-row">
-                      <div class="layer-row__title">${escapeHtml(groupKey === "bottom" ? `Bottom Layer ${index + 1}` : `Top Layer ${index + 1}`)}</div>
+                      <div class="layer-row__head">
+                        <div class="layer-row__title">${escapeHtml(groupKey === "bottom" ? `Bottom Layer ${index + 1}` : `Top Layer ${index + 1}`)}</div>
+                        ${
+                          groupKey === "top" || layers.length > 1
+                            ? `<button class="action-button action-button--small action-button--danger" type="button" data-action="remove-layer" data-group="${groupKey}" data-index="${index}">Remove</button>`
+                            : ""
+                        }
+                      </div>
                       <div class="layer-row__grid">
                         ${selectField("Bar size", `reinforcement.${groupKey}Layers.${index}.barSize`, layer.barSize, BAR_OPTIONS)}
                         ${numberField("Bar count", `reinforcement.${groupKey}Layers.${index}.barCount`, layer.barCount, { step: "1", min: "1" })}
@@ -225,11 +232,6 @@ function renderLayerEditor(title, groupKey, layers, spacingPath, spacingValue, l
                           <strong>${formatNumber(layerData[index]?.depth || 0, 2)} in</strong>
                         </div>
                       </div>
-                      ${
-                        groupKey === "top" || layers.length > 1
-                          ? `<button class="action-button action-button--small action-button--danger" type="button" data-action="remove-layer" data-group="${groupKey}" data-index="${index}">Remove</button>`
-                          : ""
-                      }
                     </article>
                   `
                 )
@@ -244,8 +246,17 @@ function renderLayerEditor(title, groupKey, layers, spacingPath, spacingValue, l
 
 function renderLayerScheduleTable(title, layers) {
   return `
-    <article class="subpanel">
-      <h3>${escapeHtml(title)}</h3>
+    <article class="subpanel layer-schedule-card">
+      <div class="layer-schedule-card__header">
+        <h3>${escapeHtml(title)}</h3>
+        <div class="layer-schedule-head">
+          <span>Layer</span>
+          <span>Bars</span>
+          <span>Size</span>
+          <span>Area</span>
+          <span>y</span>
+        </div>
+      </div>
       <div class="layer-schedule-table">
         ${
           layers.length
@@ -253,10 +264,26 @@ function renderLayerScheduleTable(title, layers) {
                 .map(
                   (layer) => `
                     <div class="layer-schedule-row">
-                      <strong>L${layer.index + 1}</strong>
-                      <span>${escapeHtml(`${layer.barCount} ${layer.barSize}`)}</span>
-                      <span>${formatNumber(layer.area, 2)} in²</span>
-                      <span>y = ${formatNumber(layer.depth, 2)} in</span>
+                      <div class="layer-schedule-cell">
+                        <span class="layer-schedule-mobile-label">Layer</span>
+                        <strong>L${layer.index + 1}</strong>
+                      </div>
+                      <div class="layer-schedule-cell">
+                        <span class="layer-schedule-mobile-label">Bars</span>
+                        <span>${layer.barCount}</span>
+                      </div>
+                      <div class="layer-schedule-cell">
+                        <span class="layer-schedule-mobile-label">Size</span>
+                        <span>${escapeHtml(layer.barSize)}</span>
+                      </div>
+                      <div class="layer-schedule-cell">
+                        <span class="layer-schedule-mobile-label">Area</span>
+                        <span>${formatNumber(layer.area, 2)} in²</span>
+                      </div>
+                      <div class="layer-schedule-cell">
+                        <span class="layer-schedule-mobile-label">y</span>
+                        <span>${formatNumber(layer.depth, 2)} in</span>
+                      </div>
                     </div>
                   `
                 )

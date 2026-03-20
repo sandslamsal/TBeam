@@ -429,10 +429,20 @@ details[open] > summary .accordion-chevron {
 .equation-stack,
 .report-outline,
 .step-stack,
-.layer-editor__rows,
-.layer-editor-stack {
+.layer-editor__rows {
   display: grid;
   gap: 12px;
+}
+
+.layer-editor-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.layer-editor-stack > .layer-editor:last-child {
+  grid-column: 1 / -1;
 }
 
 .message-card {
@@ -540,7 +550,8 @@ details[open] > summary .accordion-chevron {
 }
 
 .drawing-card svg,
-.figure-panel svg {
+.figure-panel svg,
+.engineering-svg {
   display: block;
   width: 100%;
   height: auto;
@@ -651,6 +662,13 @@ details[open] > summary .accordion-chevron {
   border: 1px solid rgba(16, 37, 58, 0.08);
 }
 
+.layer-row__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
 .layer-row__title {
   font: 600 0.9rem "IBM Plex Mono", monospace;
   color: var(--muted);
@@ -658,8 +676,9 @@ details[open] > summary .accordion-chevron {
 
 .layer-row__grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.1fr) minmax(120px, 0.9fr) minmax(120px, 0.9fr) minmax(120px, 0.9fr);
   gap: 12px;
+  align-items: stretch;
 }
 
 .layer-row__derived {
@@ -669,6 +688,7 @@ details[open] > summary .accordion-chevron {
   background: rgba(255, 255, 255, 0.76);
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .layer-row__derived span {
@@ -676,6 +696,59 @@ details[open] > summary .accordion-chevron {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+
+.layer-row__derived strong {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.layer-schedule-card {
+  display: grid;
+  gap: 12px;
+}
+
+.layer-schedule-card__header {
+  display: grid;
+  gap: 10px;
+}
+
+.layer-schedule-card__header h3 {
+  margin: 0;
+}
+
+.layer-schedule-head,
+.layer-schedule-row {
+  display: grid;
+  grid-template-columns: 60px 72px 72px minmax(94px, 1fr) 120px;
+  gap: 10px;
+  align-items: center;
+}
+
+.layer-schedule-head {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.layer-schedule-head span {
+  color: var(--muted);
+  font: 600 0.72rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.layer-schedule-cell {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.layer-schedule-mobile-label {
+  display: none;
+  color: var(--muted);
+  font: 600 0.72rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .empty-state {
@@ -791,6 +864,10 @@ details[open] > summary .accordion-chevron {
   stroke: rgba(16, 37, 58, 0.12);
 }
 
+.engineering-svg {
+  overflow: visible;
+}
+
 .drawing-title {
   font: 700 17px "IBM Plex Sans", sans-serif;
   fill: #10253a;
@@ -809,8 +886,22 @@ details[open] > summary .accordion-chevron {
   fill: #37495b;
 }
 
+.drawing-label--muted {
+  fill: #617284;
+}
+
+.drawing-label--end,
+.dim-text--end,
+.result-value {
+  text-anchor: end;
+}
+
 .dim-text--center {
   text-anchor: middle;
+}
+
+.dim-text--middle {
+  dominant-baseline: middle;
 }
 
 .drawing-note {
@@ -838,6 +929,28 @@ details[open] > summary .accordion-chevron {
   fill: rgba(29, 107, 120, 0.14);
   stroke: rgba(29, 107, 120, 0.82);
   stroke-width: 2;
+}
+
+.strain-guide {
+  stroke: rgba(29, 107, 120, 0.74);
+  stroke-width: 2.2;
+  fill: none;
+}
+
+.zone-shade {
+  fill: rgba(16, 37, 58, 0.04);
+}
+
+.zone-divider,
+.result-divider {
+  stroke: rgba(16, 37, 58, 0.22);
+  stroke-width: 1.2;
+  stroke-dasharray: 6 5;
+}
+
+.stirrup-line {
+  stroke: #1d6b78;
+  stroke-width: 2.2;
 }
 
 .steel-stress-line {
@@ -882,6 +995,14 @@ details[open] > summary .accordion-chevron {
 
   .top-workflow-grid {
     grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  }
+
+  .layer-editor-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .layer-editor-stack > .layer-editor:last-child {
+    grid-column: auto;
   }
 
   .top-input-stack--primary {
@@ -929,9 +1050,27 @@ details[open] > summary .accordion-chevron {
   }
 
   .logo-uploader,
-  .layer-row__grid,
-  .layer-schedule-row {
+  .layer-editor-stack,
+  .layer-row__grid {
     grid-template-columns: 1fr;
+  }
+
+  .layer-row__head {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .layer-schedule-head {
+    display: none;
+  }
+
+  .layer-schedule-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+
+  .layer-schedule-mobile-label {
+    display: block;
   }
 
   .workflow-nav {
