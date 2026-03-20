@@ -189,7 +189,7 @@ function logoUploader(project) {
             ? `<button class="action-button" type="button" data-action="clear-logo">Clear Logo</button>`
             : ""
         }
-        <small>PNG or JPG recommended. The report stores a scaled version for stable export.</small>
+        <small>PNG, JPG, or SVG logos are accepted. High-resolution files are scaled automatically for clean report output.</small>
       </div>
     </div>
   `;
@@ -239,7 +239,9 @@ function renderLayerEditor(title, groupKey, layers, spacingPath, spacingValue, l
             : `<div class="empty-state">${escapeHtml(groupKey === "top" ? "No top reinforcement layers are defined yet." : "At least one bottom layer is required.")}</div>`
         }
       </div>
-      ${numberField("Vertical clear spacing between layers (in)", spacingPath, spacingValue, { hint: "Measured clear between adjacent rows in the same face." })}
+      <div class="layer-editor__footer">
+        ${numberField("Vertical clear spacing (in)", spacingPath, spacingValue, { hint: "Measured clear between adjacent rows in the same face." })}
+      </div>
     </section>
   `;
 }

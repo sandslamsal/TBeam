@@ -26,14 +26,14 @@ function verticalDimension(dimensionX, y1, y2, extensionX, label) {
 
 export function renderSectionDrawing(snapshot) {
   const { geometry, reinforcement, flexure } = snapshot;
-  const viewWidth = 1120;
-  const viewHeight = 620;
+  const viewWidth = 1020;
+  const viewHeight = 584;
   const margin = 42;
   const frameInset = 18;
   const titleY = 48;
-  const topY = 164;
-  const sectionCenter = 398;
-  const scale = Math.min(430 / geometry.bf, 334 / geometry.h);
+  const topY = 150;
+  const sectionCenter = 350;
+  const scale = Math.min(440 / geometry.bf, 320 / geometry.h);
   const flangeWidth = geometry.bf * scale;
   const flangeHeight = geometry.hf * scale;
   const webWidth = geometry.bw * scale;
@@ -51,9 +51,9 @@ export function renderSectionDrawing(snapshot) {
   const stirrupY = topY + stirrupInset;
   const stirrupWidth = Math.max(0, webWidth - 2 * stirrupInset);
   const stirrupHeight = Math.max(0, geometry.h * scale - 2 * stirrupInset);
-  const infoBoxWidth = 236;
-  const infoBoxX = viewWidth - frameInset - infoBoxWidth - 34;
-  const infoBoxY = topY + 146;
+  const infoBoxWidth = 216;
+  const infoBoxX = viewWidth - frameInset - infoBoxWidth - 26;
+  const infoBoxY = topY + 132;
   const infoRows = [
     ["a", `${formatNumber(flexure.a, 2)} in`],
     ["c", `${formatNumber(flexure.c, 2)} in`],
@@ -90,7 +90,7 @@ export function renderSectionDrawing(snapshot) {
 
       <rect x="${frameInset}" y="${frameInset}" width="${viewWidth - frameInset * 2}" height="${viewHeight - frameInset * 2}" rx="20" class="drawing-frame" />
       <text x="${margin}" y="${titleY}" class="drawing-title">Main T-Beam Section</text>
-      <text x="${margin}" y="${titleY + 22}" class="drawing-subtitle">Parametric flange, web, reinforcement cage, and governing flexural dimensions</text>
+      <text x="${margin}" y="${titleY + 22}" class="drawing-subtitle">Parametric flange, web, bar layers, and governing flexural dimensions</text>
 
       ${compressionMarkup}
       <rect x="${sectionLeft}" y="${topY}" width="${flangeWidth}" height="${flangeHeight}" class="section-outline section-fill" />
@@ -123,7 +123,7 @@ export function renderSectionDrawing(snapshot) {
         .join("")}
 
       <text x="${margin}" y="${viewHeight - 44}" class="drawing-note">Dimension strings are kept outside the concrete profile and tied to the same layer coordinates used by the solver.</text>
-      <text x="${margin}" y="${viewHeight - 22}" class="drawing-note">Compression-block depth, neutral axis, and effective depth update automatically with the calculated section state.</text>
+      <text x="${margin}" y="${viewHeight - 22}" class="drawing-note">Compression-block depth, neutral axis, and effective depth update automatically with the solved section state.</text>
     </svg>
   `;
 }

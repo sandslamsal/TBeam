@@ -57,17 +57,17 @@ function stressBlockMarkup(sectionCase, axisX, topY, aY, flangeHeight) {
 export function renderFlexureDrawing(snapshot) {
   const { geometry, reinforcement, flexure } = snapshot;
   const viewWidth = 1160;
-  const viewHeight = 620;
+  const viewHeight = 644;
   const margin = 34;
   const titleY = 46;
   const panelTop = 118;
   const panelGap = 18;
   const panelWidth = (viewWidth - margin * 2 - panelGap * 3) / 4;
-  const panelHeight = 410;
+  const panelHeight = 430;
   const panelXs = Array.from({ length: 4 }, (_, index) => margin + index * (panelWidth + panelGap));
-  const contentTop = panelTop + 54;
+  const contentTop = panelTop + 56;
 
-  const sectionScale = Math.min((panelWidth - 50) / geometry.bf, (panelHeight - 132) / geometry.h);
+  const sectionScale = Math.min((panelWidth - 50) / geometry.bf, (panelHeight - 150) / geometry.h);
   const sectionCenter = panelXs[0] + panelWidth / 2;
   const sectionTop = contentTop + 10;
   const sectionBottom = sectionTop + geometry.h * sectionScale;
@@ -89,6 +89,9 @@ export function renderFlexureDrawing(snapshot) {
       })
     )
     .join("");
+  const sectionBoxX = panelXs[0] + 18;
+  const sectionBoxY = panelTop + panelHeight - 74;
+  const sectionBoxWidth = panelWidth - 36;
 
   const strainPanelX = panelXs[1];
   const strainAxisX = strainPanelX + panelWidth * 0.52;
@@ -96,7 +99,7 @@ export function renderFlexureDrawing(snapshot) {
   const strainBottomX = strainAxisX + 88;
   const strainBottomConnectorEnd = strainBottomX - 10;
   const strainBoxX = strainPanelX + 20;
-  const strainBoxY = panelTop + panelHeight - 78;
+  const strainBoxY = panelTop + panelHeight - 88;
   const strainBoxWidth = panelWidth - 40;
 
   const stressPanelX = panelXs[2];
@@ -120,7 +123,7 @@ export function renderFlexureDrawing(snapshot) {
   const couplePanelX = panelXs[3];
   const coupleAxisX = couplePanelX + 92;
   const resultBoxX = couplePanelX + 22;
-  const resultBoxY = panelTop + panelHeight - 126;
+  const resultBoxY = panelTop + panelHeight - 134;
   const resultBoxWidth = panelWidth - 44;
   const resultRows = [
     ["C", `${formatNumber(flexure.totalCompression, 1)} k`],
@@ -157,11 +160,20 @@ export function renderFlexureDrawing(snapshot) {
       <rect x="${sectionCenter - webWidth / 2}" y="${sectionTop + flangeHeight}" width="${webWidth}" height="${geometry.webDepth * sectionScale}" class="section-outline section-fill" />
       ${sectionBars}
       <line x1="${panelXs[0] + 18}" y1="${neutralAxisY}" x2="${panelXs[0] + panelWidth - 18}" y2="${neutralAxisY}" class="neutral-axis" />
-      ${horizontalDimension(sectionCenter - flangeWidth / 2, sectionCenter + flangeWidth / 2, sectionTop - 14, sectionTop + 2, `b = ${formatNumber(geometry.bf, 1)} in`)}
-      ${verticalDimension(panelXs[0] + 20, sectionTop, sectionTop + flangeHeight, panelXs[0] + 44, `hf = ${formatNumber(geometry.hf, 1)} in`)}
-      ${verticalDimension(panelXs[0] + panelWidth - 20, sectionTop, sectionTop + geometry.d * sectionScale, panelXs[0] + panelWidth - 46, `d = ${formatNumber(geometry.d, 1)} in`)}
+      ${horizontalDimension(sectionCenter - flangeWidth / 2, sectionCenter + flangeWidth / 2, sectionTop - 14, sectionTop + 2, "b")}
+      ${verticalDimension(panelXs[0] + 20, sectionTop, sectionTop + flangeHeight, panelXs[0] + 44, "hf")}
+      ${verticalDimension(panelXs[0] + panelWidth - 20, sectionTop, sectionTop + geometry.d * sectionScale, panelXs[0] + panelWidth - 46, "d")}
       ${leader(panelXs[0] + panelWidth - 34, neutralAxisY, panelXs[0] + panelWidth - 10, panelXs[0] + panelWidth - 4, neutralAxisY - 12, "N.A.")}
       ${leader(sectionCenter, sectionBottom - 8, sectionCenter + 30, sectionCenter + 48, sectionBottom + 18, "As")}
+      <rect x="${sectionBoxX}" y="${sectionBoxY}" width="${sectionBoxWidth}" height="52" rx="14" class="info-box" />
+      <line x1="${sectionBoxX + sectionBoxWidth / 3}" y1="${sectionBoxY + 10}" x2="${sectionBoxX + sectionBoxWidth / 3}" y2="${sectionBoxY + 40}" class="result-divider" />
+      <line x1="${sectionBoxX + (sectionBoxWidth * 2) / 3}" y1="${sectionBoxY + 10}" x2="${sectionBoxX + (sectionBoxWidth * 2) / 3}" y2="${sectionBoxY + 40}" class="result-divider" />
+      <text x="${sectionBoxX + 16}" y="${sectionBoxY + 23}" class="drawing-label drawing-label--muted">b</text>
+      <text x="${sectionBoxX + sectionBoxWidth / 3 - 12}" y="${sectionBoxY + 23}" class="drawing-label result-value">${formatNumber(geometry.bf, 1)} in</text>
+      <text x="${sectionBoxX + sectionBoxWidth / 3 + 16}" y="${sectionBoxY + 23}" class="drawing-label drawing-label--muted">hf</text>
+      <text x="${sectionBoxX + (sectionBoxWidth * 2) / 3 - 12}" y="${sectionBoxY + 23}" class="drawing-label result-value">${formatNumber(geometry.hf, 1)} in</text>
+      <text x="${sectionBoxX + (sectionBoxWidth * 2) / 3 + 16}" y="${sectionBoxY + 23}" class="drawing-label drawing-label--muted">d</text>
+      <text x="${sectionBoxX + sectionBoxWidth - 14}" y="${sectionBoxY + 23}" class="drawing-label result-value">${formatNumber(geometry.d, 1)} in</text>
 
       <line x1="${strainAxisX}" y1="${sectionTop}" x2="${strainAxisX}" y2="${sectionBottom}" class="stress-axis" />
       <line x1="${strainTopX}" y1="${sectionTop}" x2="${strainBottomX}" y2="${sectionBottom}" class="strain-guide" />
@@ -169,14 +181,19 @@ export function renderFlexureDrawing(snapshot) {
       <line x1="${strainPanelX + 18}" y1="${neutralAxisY}" x2="${strainPanelX + panelWidth - 18}" y2="${neutralAxisY}" class="neutral-axis" />
       ${verticalDimension(strainPanelX + panelWidth - 34, sectionTop, compressionBottomY, strainPanelX + panelWidth - 58, "a")}
       ${verticalDimension(strainPanelX + panelWidth - 80, sectionTop, neutralAxisY, strainPanelX + panelWidth - 58, "c")}
-      <text x="${strainTopX - 8}" y="${sectionTop - 12}" class="drawing-label">ec = 0.003</text>
-      <text x="${strainBottomX - 6}" y="${sectionBottom + 22}" class="drawing-label">et = ${formatNumber(flexure.maxTensionStrain, 5)}</text>
-      <rect x="${strainBoxX}" y="${strainBoxY}" width="${strainBoxWidth}" height="50" rx="14" class="info-box" />
-      <line x1="${strainBoxX + 70}" y1="${strainBoxY + 10}" x2="${strainBoxX + 70}" y2="${strainBoxY + 40}" class="result-divider" />
-      <text x="${strainBoxX + 16}" y="${strainBoxY + 25}" class="drawing-label drawing-label--muted">c</text>
-      <text x="${strainBoxX + 56}" y="${strainBoxY + 25}" class="drawing-label result-value">${formatNumber(flexure.c, 2)} in</text>
-      <text x="${strainBoxX + 90}" y="${strainBoxY + 25}" class="drawing-label drawing-label--muted">a</text>
-      <text x="${strainBoxX + strainBoxWidth - 14}" y="${strainBoxY + 25}" class="drawing-label result-value">${formatNumber(flexure.a, 2)} in</text>
+      <text x="${strainTopX - 10}" y="${sectionTop - 12}" class="drawing-label">ec</text>
+      <text x="${strainBottomConnectorEnd + 8}" y="${sectionBottom - 8}" class="drawing-label">et</text>
+      <rect x="${strainBoxX}" y="${strainBoxY}" width="${strainBoxWidth}" height="58" rx="14" class="info-box" />
+      <line x1="${strainBoxX + strainBoxWidth / 2}" y1="${strainBoxY + 10}" x2="${strainBoxX + strainBoxWidth / 2}" y2="${strainBoxY + 48}" class="result-divider" />
+      <line x1="${strainBoxX + 12}" y1="${strainBoxY + 29}" x2="${strainBoxX + strainBoxWidth - 12}" y2="${strainBoxY + 29}" class="result-divider" />
+      <text x="${strainBoxX + 16}" y="${strainBoxY + 22}" class="drawing-label drawing-label--muted">ec</text>
+      <text x="${strainBoxX + strainBoxWidth / 2 - 12}" y="${strainBoxY + 22}" class="drawing-label result-value">0.00300</text>
+      <text x="${strainBoxX + strainBoxWidth / 2 + 16}" y="${strainBoxY + 22}" class="drawing-label drawing-label--muted">c</text>
+      <text x="${strainBoxX + strainBoxWidth - 14}" y="${strainBoxY + 22}" class="drawing-label result-value">${formatNumber(flexure.c, 2)} in</text>
+      <text x="${strainBoxX + 16}" y="${strainBoxY + 46}" class="drawing-label drawing-label--muted">et</text>
+      <text x="${strainBoxX + strainBoxWidth / 2 - 12}" y="${strainBoxY + 46}" class="drawing-label result-value">${formatNumber(flexure.maxTensionStrain, 5)}</text>
+      <text x="${strainBoxX + strainBoxWidth / 2 + 16}" y="${strainBoxY + 46}" class="drawing-label drawing-label--muted">a</text>
+      <text x="${strainBoxX + strainBoxWidth - 14}" y="${strainBoxY + 46}" class="drawing-label result-value">${formatNumber(flexure.a, 2)} in</text>
 
       <line x1="${stressAxisX}" y1="${sectionTop}" x2="${stressAxisX}" y2="${sectionBottom}" class="stress-axis" />
       <line x1="${forceAxisX}" y1="${sectionTop}" x2="${forceAxisX}" y2="${sectionBottom}" class="stress-axis" />
@@ -197,8 +214,8 @@ export function renderFlexureDrawing(snapshot) {
       <text x="${coupleAxisX + 52}" y="${tensionResultantY + 4}" class="drawing-label">T</text>
       <text x="${coupleAxisX + 52}" y="${(compressionResultantY + tensionResultantY) / 2 + 4}" class="drawing-label">z</text>
 
-      <rect x="${resultBoxX}" y="${resultBoxY}" width="${resultBoxWidth}" height="104" rx="16" class="info-box" />
-      <line x1="${resultBoxX + 78}" y1="${resultBoxY + 14}" x2="${resultBoxX + 78}" y2="${resultBoxY + 90}" class="result-divider" />
+      <rect x="${resultBoxX}" y="${resultBoxY}" width="${resultBoxWidth}" height="112" rx="16" class="info-box" />
+      <line x1="${resultBoxX + 78}" y1="${resultBoxY + 14}" x2="${resultBoxX + 78}" y2="${resultBoxY + 98}" class="result-divider" />
       ${resultRows
         .map(
           ([label, value], index) => `

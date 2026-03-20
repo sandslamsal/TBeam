@@ -161,6 +161,10 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           font-family: "IBM Plex Sans", sans-serif;
           background: linear-gradient(180deg, #f4ede2 0%, #fffdfa 40%, #f3f6f8 100%);
         }
+        img,
+        svg {
+          max-width: 100%;
+        }
         .report-shell {
           max-width: 1180px;
           margin: 0 auto;
@@ -220,6 +224,7 @@ export function buildReportHtml(snapshot, autoPrint = false) {
         .report-title-block div {
           display: grid;
           gap: 4px;
+          min-width: 0;
         }
         .report-title-block span {
           color: var(--muted);
@@ -240,10 +245,12 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           border: 1px solid var(--line);
           border-radius: 22px;
           background: var(--paper);
+          min-width: 0;
         }
         table {
           width: 100%;
           border-collapse: collapse;
+          table-layout: fixed;
         }
         th,
         td {
@@ -251,11 +258,21 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           border-bottom: 1px solid var(--line);
           text-align: left;
           vertical-align: top;
+          overflow-wrap: anywhere;
         }
         th {
           width: 42%;
           color: var(--muted);
           font-weight: 600;
+        }
+        strong,
+        p,
+        li,
+        h1,
+        h2,
+        h3,
+        figcaption {
+          overflow-wrap: anywhere;
         }
         .report-layer-grid {
           display: grid;
@@ -274,6 +291,7 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           background: white;
           break-inside: avoid;
           page-break-inside: avoid;
+          overflow: hidden;
         }
         .report-figure figcaption {
           margin: 0 0 12px;
@@ -281,6 +299,16 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           font: 600 0.84rem "IBM Plex Mono", monospace;
           text-transform: uppercase;
           letter-spacing: 0.08em;
+        }
+        .report-figure .engineering-svg {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+        .report-section__header {
+          display: grid;
+          gap: 4px;
+          min-width: 0;
         }
         .report-step-stack {
           display: grid;
@@ -291,6 +319,7 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           border-radius: 18px;
           background: var(--panel);
           border: 1px solid var(--line);
+          min-width: 0;
         }
         .report-step h3 {
           margin: 0 0 10px;
@@ -484,8 +513,10 @@ export function buildReportHtml(snapshot, autoPrint = false) {
             print-color-adjust: exact;
           }
           .report-shell {
+            width: 186mm;
             max-width: 186mm;
             padding: 0;
+            overflow: hidden;
           }
           .report-card,
           .report-section,
@@ -503,16 +534,37 @@ export function buildReportHtml(snapshot, autoPrint = false) {
           .report-figure {
             border-color: rgba(18, 38, 58, 0.18);
           }
+          .report-hero {
+            grid-template-columns: 44mm minmax(0, 1fr);
+            gap: 14px;
+            padding: 14px 16px;
+          }
+          .report-logo {
+            height: 28mm;
+          }
+          .report-title-block {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
           .report-grid,
           .report-layer-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
           }
           .report-drawing-grid {
             gap: 12px;
           }
+          .report-card,
+          .report-section,
+          .report-figure {
+            padding: 14px;
+          }
+          .report-step {
+            padding: 12px;
+          }
           .report-section__header,
           .report-hero h1,
-          .report-step h3 {
+          .report-step h3,
+          .report-figure figcaption {
             break-after: avoid;
             page-break-after: avoid;
           }

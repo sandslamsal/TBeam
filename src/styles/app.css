@@ -162,6 +162,8 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
 }
 
 .workflow-nav {
@@ -417,7 +419,7 @@ details[open] > summary .accordion-chevron {
 }
 
 .dashboard-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .derived-strip--tall {
@@ -427,9 +429,9 @@ details[open] > summary .accordion-chevron {
 .metric-card {
   min-width: 0;
   display: grid;
-  gap: 8px;
+  gap: 6px;
   align-content: start;
-  padding: 16px;
+  padding: 15px;
   background:
     linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(248, 242, 233, 0.98)),
     linear-gradient(115deg, rgba(198, 97, 43, 0.06), rgba(29, 107, 120, 0.04));
@@ -437,24 +439,25 @@ details[open] > summary .accordion-chevron {
 
 .metric-card__label {
   margin: 0;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.11em;
   color: var(--muted);
 }
 
 .metric-card__value {
-  font-size: clamp(1.14rem, 0.9vw + 0.82rem, 1.42rem);
+  font-size: clamp(1rem, 0.68vw + 0.82rem, 1.28rem);
   font-weight: 700;
-  line-height: 1.12;
+  line-height: 1.16;
   overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 
 .metric-card__note {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   color: var(--muted);
-  line-height: 1.45;
+  line-height: 1.38;
 }
 
 .message-stack,
@@ -469,7 +472,7 @@ details[open] > summary .accordion-chevron {
 
 .layer-editor-stack {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 12px;
   align-items: start;
 }
@@ -677,14 +680,23 @@ details[open] > summary .accordion-chevron {
   border-radius: 18px;
   border: 1px solid var(--line);
   background: rgba(255, 252, 247, 0.88);
+  min-width: 0;
+  container-type: inline-size;
 }
 
 .layer-editor__header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   align-items: start;
   margin-bottom: 14px;
+}
+
+.layer-editor__header > div,
+.layer-row__head,
+.layer-row__title,
+.layer-editor__footer {
+  min-width: 0;
 }
 
 .layer-editor__header h3 {
@@ -719,9 +731,13 @@ details[open] > summary .accordion-chevron {
 
 .layer-row__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(120px, 0.9fr) minmax(120px, 0.9fr) minmax(120px, 0.9fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
   align-items: stretch;
+}
+
+.layer-row__grid .field {
+  min-width: 0;
 }
 
 .layer-row__derived {
@@ -732,6 +748,8 @@ details[open] > summary .accordion-chevron {
   display: grid;
   gap: 4px;
   min-width: 0;
+  align-content: center;
+  min-height: 76px;
 }
 
 .layer-row__derived span {
@@ -742,13 +760,15 @@ details[open] > summary .accordion-chevron {
 }
 
 .layer-row__derived strong {
-  font-size: 1rem;
+  font-size: 0.96rem;
   overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 
 .layer-schedule-card {
   display: grid;
   gap: 12px;
+  container-type: inline-size;
 }
 
 .layer-schedule-card__header {
@@ -763,7 +783,7 @@ details[open] > summary .accordion-chevron {
 .layer-schedule-head,
 .layer-schedule-row {
   display: grid;
-  grid-template-columns: 60px 72px 72px minmax(94px, 1fr) 120px;
+  grid-template-columns: minmax(52px, 0.68fr) minmax(52px, 0.72fr) minmax(56px, 0.76fr) minmax(92px, 1fr) minmax(92px, 0.94fr);
   gap: 10px;
   align-items: center;
 }
@@ -784,6 +804,8 @@ details[open] > summary .accordion-chevron {
   display: grid;
   gap: 3px;
   min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
 }
 
 .layer-schedule-mobile-label {
@@ -1015,9 +1037,38 @@ details[open] > summary .accordion-chevron {
   background: var(--panel-strong);
 }
 
+@container (max-width: 420px) {
+  .layer-editor__header {
+    grid-template-columns: 1fr;
+  }
+
+  .layer-row__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container (max-width: 360px) {
+  .layer-schedule-head {
+    display: none;
+  }
+
+  .layer-schedule-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+
+  .layer-schedule-mobile-label {
+    display: block;
+  }
+}
+
 @media (max-width: 1280px) {
   .hero {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "intro"
+      "status"
+      "actions";
     align-items: start;
   }
 
@@ -1032,14 +1083,6 @@ details[open] > summary .accordion-chevron {
 
   .top-workflow-grid {
     grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-  }
-
-  .layer-editor-stack {
-    grid-template-columns: 1fr;
-  }
-
-  .layer-editor-stack > .layer-editor:last-child {
-    grid-column: auto;
   }
 
   .top-input-stack--primary {
@@ -1066,6 +1109,12 @@ details[open] > summary .accordion-chevron {
   .metric-grid,
   .derived-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .layer-schedule-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1098,8 +1147,7 @@ details[open] > summary .accordion-chevron {
   }
 
   .logo-uploader,
-  .layer-editor-stack,
-  .layer-row__grid {
+  .layer-editor-stack {
     grid-template-columns: 1fr;
   }
 

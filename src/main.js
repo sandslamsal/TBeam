@@ -17,8 +17,11 @@ function buildSessionExport(snapshot) {
     project: {
       name: snapshot.state.project.name,
       designer: snapshot.state.project.designer,
+      date: snapshot.state.project.date,
       checkedBy: snapshot.state.project.checkedBy,
-      companyName: snapshot.state.project.companyName
+      checkedDate: snapshot.state.project.checkedDate,
+      companyName: snapshot.state.project.companyName,
+      companyLogoFilename: snapshot.state.project.companyLogoFilename
     },
     state: snapshot.state,
     outputs: {
@@ -225,8 +228,8 @@ function readLogoDataUrl(file) {
     reader.onload = () => {
       const image = new Image();
       image.onload = () => {
-        const maxWidth = 360;
-        const maxHeight = 140;
+        const maxWidth = 960;
+        const maxHeight = 280;
         const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
         const canvas = document.createElement("canvas");
         canvas.width = Math.max(1, Math.round(image.width * scale));
