@@ -5,6 +5,8 @@ export const DEFAULT_STATE = {
     name: "TBeam Trial Design",
     designer: "Bridge Structures Group",
     date: new Date().toISOString().slice(0, 10),
+    checkedBy: "",
+    checkedDate: new Date().toISOString().slice(0, 10),
     companyName: "Bridge Structures Group",
     companyLogoDataUrl: "",
     companyLogoFilename: "",

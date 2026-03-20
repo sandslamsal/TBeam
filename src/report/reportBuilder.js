@@ -211,7 +211,7 @@ export function buildReportHtml(snapshot, autoPrint = false) {
         }
         .report-title-block {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
           gap: 12px 18px;
           margin-top: 18px;
           padding-top: 18px;
@@ -229,7 +229,7 @@ export function buildReportHtml(snapshot, autoPrint = false) {
         }
         .report-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           gap: 18px;
           margin-top: 22px;
         }
@@ -259,7 +259,7 @@ export function buildReportHtml(snapshot, autoPrint = false) {
         }
         .report-layer-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
           gap: 18px;
         }
         .report-drawing-grid {
@@ -534,6 +534,14 @@ export function buildReportHtml(snapshot, autoPrint = false) {
             fill: rgba(16, 37, 58, 0.03) !important;
           }
         }
+        @media (max-width: 860px) {
+          .report-shell {
+            padding: 20px;
+          }
+          .report-hero {
+            grid-template-columns: 1fr;
+          }
+        }
       </style>
     </head>
     <body>
@@ -546,8 +554,10 @@ export function buildReportHtml(snapshot, autoPrint = false) {
             <p>This report summarizes flexural and shear capacity calculations per AASHTO LRFD Bridge Design Specifications, 9th Edition.</p>
             <div class="report-title-block">
               <div><span>Designer</span><strong>${escapeHtml(snapshot.state.project.designer || "Not provided")}</strong></div>
+              <div><span>Checked By / QC</span><strong>${escapeHtml(snapshot.state.project.checkedBy || "Not provided")}</strong></div>
               <div><span>Company</span><strong>${escapeHtml(snapshot.state.project.companyName || "Not provided")}</strong></div>
               <div><span>Date</span><strong>${escapeHtml(snapshot.state.project.date || "")}</strong></div>
+              <div><span>QC Date</span><strong>${escapeHtml(snapshot.state.project.checkedDate || "")}</strong></div>
               <div><span>Section</span><strong>T-Beam Flexure and Shear Capacity</strong></div>
             </div>
           </div>

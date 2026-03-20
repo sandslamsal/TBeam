@@ -318,6 +318,11 @@ export function renderApp(snapshot) {
           <button class="action-button action-button--primary" data-action="load-example">Load Example Beam</button>
           <button class="action-button" data-action="open-report">Open Report</button>
           <button class="action-button" data-action="save-report">Save Report</button>
+          <button class="action-button" data-action="save-json">Save JSON</button>
+          <label class="action-button action-button--file">
+            Load JSON
+            <input type="file" accept=".json,application/json" data-upload="session-json" hidden>
+          </label>
           <button class="action-button" data-action="print-report">Print / PDF</button>
           <button class="action-button" data-action="reset-project">Reset Inputs</button>
         </div>
@@ -347,6 +352,8 @@ export function renderApp(snapshot) {
                 <div class="field-grid field-grid--two">
                   ${textField("Project name", "project.name", state.project.name)}
                   ${textField("Designer", "project.designer", state.project.designer)}
+                  ${textField("Checked by / QCer", "project.checkedBy", state.project.checkedBy)}
+                  ${textField("QC date", "project.checkedDate", state.project.checkedDate, { type: "date" })}
                   ${textField("Company name", "project.companyName", state.project.companyName)}
                   ${textField("Date", "project.date", state.project.date, { type: "date" })}
                   ${textAreaField("Design notes", "project.notes", state.project.notes, 4)}
@@ -472,8 +479,9 @@ export function renderApp(snapshot) {
           <article class="panel figure-panel" id="section-figure">
             <div class="panel-head panel-head--compact">
               <div>
-                <p class="panel-kicker">05 Parametric Section Figure</p>
+                <p class="panel-kicker panel-kicker--quiet">Engineering Figure</p>
                 <h2>Main T-Beam Section</h2>
+                <p class="panel-caption">Live parametric section figure tied to the current geometry, bar layers, and solved flexural depths.</p>
               </div>
             </div>
             ${renderSectionDrawing(snapshot)}
@@ -635,12 +643,18 @@ export function renderApp(snapshot) {
                   <div class="report-outline">
                     <div>Open a live report window for on-screen review</div>
                     <div>Save a standalone HTML calculation package</div>
+                    <div>Save or restore a JSON session package with inputs and key outputs</div>
                     <div>Print directly to PDF with the report title block and logo</div>
                     <div>Include section figure, flexural/shear diagrams, and full calculations</div>
                   </div>
                   <div class="report-actions">
                     <button class="action-button action-button--primary" data-action="open-report">Open Report</button>
                     <button class="action-button" data-action="save-report">Save Report</button>
+                    <button class="action-button" data-action="save-json">Save JSON</button>
+                    <label class="action-button action-button--file">
+                      Load JSON
+                      <input type="file" accept=".json,application/json" data-upload="session-json" hidden>
+                    </label>
                     <button class="action-button" data-action="print-report">Print / PDF</button>
                   </div>
                 </article>
@@ -650,6 +664,8 @@ export function renderApp(snapshot) {
                     ${keyValueRows([
                       ["Project", state.project.name],
                       ["Designer", state.project.designer],
+                      ["Checked by / QC", state.project.checkedBy || "None"],
+                      ["QC date", state.project.checkedDate || "None"],
                       ["Company", state.project.companyName || "None"],
                       ["Date", state.project.date],
                       ["Logo", state.project.companyLogoDataUrl ? "Included in report header" : "Not uploaded"],

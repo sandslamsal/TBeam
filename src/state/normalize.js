@@ -37,6 +37,8 @@ export function normalizeState(inputState) {
   state.project.name ??= DEFAULT_STATE.project.name;
   state.project.designer ??= DEFAULT_STATE.project.designer;
   state.project.date ??= DEFAULT_STATE.project.date;
+  state.project.checkedBy ??= DEFAULT_STATE.project.checkedBy;
+  state.project.checkedDate ??= DEFAULT_STATE.project.checkedDate;
   state.project.companyName ??= DEFAULT_STATE.project.companyName;
   state.project.companyLogoDataUrl ??= "";
   state.project.companyLogoFilename ??= "";

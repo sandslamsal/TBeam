@@ -24,15 +24,6 @@ function verticalDimension(dimensionX, y1, y2, extensionX, label) {
   `;
 }
 
-function leaderCallout(anchorX, anchorY, elbowX, textX, textY, label, align = "start") {
-  return `
-    <g class="callout-group">
-      <polyline points="${anchorX},${anchorY} ${elbowX},${anchorY} ${textX},${textY - 4}" class="callout-line" />
-      <text x="${textX}" y="${textY}" class="drawing-label ${align === "end" ? "drawing-label--end" : ""}">${label}</text>
-    </g>
-  `;
-}
-
 export function renderSectionDrawing(snapshot) {
   const { geometry, reinforcement, flexure } = snapshot;
   const viewWidth = 1120;
@@ -60,9 +51,15 @@ export function renderSectionDrawing(snapshot) {
   const stirrupY = topY + stirrupInset;
   const stirrupWidth = Math.max(0, webWidth - 2 * stirrupInset);
   const stirrupHeight = Math.max(0, geometry.h * scale - 2 * stirrupInset);
-  const rightNoteX = 854;
-  const leftNoteX = 182;
-  const compressionLabelY = topY + Math.max(22, Math.min(compressionBottomY - topY - 10, 38));
+  const infoBoxWidth = 236;
+  const infoBoxX = viewWidth - frameInset - infoBoxWidth - 34;
+  const infoBoxY = topY + 146;
+  const infoRows = [
+    ["a", `${formatNumber(flexure.a, 2)} in`],
+    ["c", `${formatNumber(flexure.c, 2)} in`],
+    ["N.A.", `${formatNumber(flexure.c, 2)} in below top`],
+    ["Clear Cover", `${formatNumber(geometry.cover, 2)} in`]
+  ];
 
   const compressionMarkup =
     flexure.sectionCase === "flange"
@@ -110,13 +107,20 @@ export function renderSectionDrawing(snapshot) {
       ${verticalDimension(sectionLeft - 88, topY, sectionBottomY, sectionLeft, `h = ${formatNumber(geometry.h, 2)} in`)}
       ${verticalDimension(sectionLeft - 42, topY, topY + flangeHeight, sectionLeft, `hf = ${formatNumber(geometry.hf, 2)} in`)}
       ${verticalDimension(sectionRight + 52, topY, dY, sectionRight, `d = ${formatNumber(geometry.d, 2)} in`)}
-      ${verticalDimension(sectionRight + 98, topY, neutralAxisY, sectionRight, `c = ${formatNumber(flexure.c, 2)} in`)}
-      ${verticalDimension(sectionRight + 144, topY, compressionBottomY, sectionRight, `a = ${formatNumber(flexure.a, 2)} in`)}
+      <text x="${sectionRight + 46}" y="${topY + 30}" class="drawing-label">0.85 f'c block</text>
 
-      ${leaderCallout(sectionRight - flangeWidth * 0.18, compressionLabelY, sectionRight + 34, rightNoteX, topY + 30, "0.85f'c block")}
-      ${leaderCallout(sectionRight + 2, neutralAxisY, sectionRight + 34, rightNoteX, neutralAxisY - 12, "N.A.")}
-      ${leaderCallout(stirrupX + stirrupWidth, stirrupY + 22, sectionRight + 34, rightNoteX, sectionBottomY - 40, "Closed stirrup cage")}
-      ${leaderCallout(webX + 6, stirrupY + stirrupHeight * 0.52, sectionLeft - 30, leftNoteX, sectionBottomY - 18, `clear cover = ${formatNumber(geometry.cover, 2)} in`, "end")}
+      <rect x="${infoBoxX}" y="${infoBoxY}" width="${infoBoxWidth}" height="124" rx="16" class="info-box" />
+      <text x="${infoBoxX + 16}" y="${infoBoxY + 24}" class="drawing-panel-title">Section Notes</text>
+      <line x1="${infoBoxX + 14}" y1="${infoBoxY + 34}" x2="${infoBoxX + infoBoxWidth - 14}" y2="${infoBoxY + 34}" class="panel-divider" />
+      <line x1="${infoBoxX + 88}" y1="${infoBoxY + 46}" x2="${infoBoxX + 88}" y2="${infoBoxY + 110}" class="result-divider" />
+      ${infoRows
+        .map(
+          ([label, value], index) => `
+            <text x="${infoBoxX + 16}" y="${infoBoxY + 56 + index * 16}" class="drawing-label drawing-label--muted">${label}</text>
+            <text x="${infoBoxX + infoBoxWidth - 14}" y="${infoBoxY + 56 + index * 16}" class="drawing-label result-value">${value}</text>
+          `
+        )
+        .join("")}
 
       <text x="${margin}" y="${viewHeight - 44}" class="drawing-note">Dimension strings are kept outside the concrete profile and tied to the same layer coordinates used by the solver.</text>
       <text x="${margin}" y="${viewHeight - 22}" class="drawing-note">Compression-block depth, neutral axis, and effective depth update automatically with the calculated section state.</text>

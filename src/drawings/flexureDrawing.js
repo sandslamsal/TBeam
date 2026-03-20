@@ -57,18 +57,17 @@ function stressBlockMarkup(sectionCase, axisX, topY, aY, flangeHeight) {
 export function renderFlexureDrawing(snapshot) {
   const { geometry, reinforcement, flexure } = snapshot;
   const viewWidth = 1160;
-  const viewHeight = 570;
+  const viewHeight = 620;
   const margin = 34;
   const titleY = 46;
-  const panelTop = 122;
+  const panelTop = 118;
   const panelGap = 18;
   const panelWidth = (viewWidth - margin * 2 - panelGap * 3) / 4;
-  const panelHeight = 360;
+  const panelHeight = 410;
   const panelXs = Array.from({ length: 4 }, (_, index) => margin + index * (panelWidth + panelGap));
-  const contentTop = panelTop + 50;
-  const contentBottom = panelTop + panelHeight - 28;
+  const contentTop = panelTop + 54;
 
-  const sectionScale = Math.min((panelWidth - 54) / geometry.bf, (panelHeight - 112) / geometry.h);
+  const sectionScale = Math.min((panelWidth - 50) / geometry.bf, (panelHeight - 132) / geometry.h);
   const sectionCenter = panelXs[0] + panelWidth / 2;
   const sectionTop = contentTop + 10;
   const sectionBottom = sectionTop + geometry.h * sectionScale;
@@ -96,6 +95,9 @@ export function renderFlexureDrawing(snapshot) {
   const strainTopX = strainAxisX - 64;
   const strainBottomX = strainAxisX + 88;
   const strainBottomConnectorEnd = strainBottomX - 10;
+  const strainBoxX = strainPanelX + 20;
+  const strainBoxY = panelTop + panelHeight - 78;
+  const strainBoxWidth = panelWidth - 40;
 
   const stressPanelX = panelXs[2];
   const stressAxisX = stressPanelX + 92;
@@ -118,7 +120,7 @@ export function renderFlexureDrawing(snapshot) {
   const couplePanelX = panelXs[3];
   const coupleAxisX = couplePanelX + 92;
   const resultBoxX = couplePanelX + 22;
-  const resultBoxY = panelTop + 226;
+  const resultBoxY = panelTop + panelHeight - 126;
   const resultBoxWidth = panelWidth - 44;
   const resultRows = [
     ["C", `${formatNumber(flexure.totalCompression, 1)} k`],
@@ -165,10 +167,16 @@ export function renderFlexureDrawing(snapshot) {
       <line x1="${strainTopX}" y1="${sectionTop}" x2="${strainBottomX}" y2="${sectionBottom}" class="strain-guide" />
       <line x1="${strainAxisX}" y1="${sectionBottom}" x2="${strainBottomConnectorEnd}" y2="${sectionBottom}" class="dim-extension" />
       <line x1="${strainPanelX + 18}" y1="${neutralAxisY}" x2="${strainPanelX + panelWidth - 18}" y2="${neutralAxisY}" class="neutral-axis" />
-      ${verticalDimension(strainPanelX + panelWidth - 34, sectionTop, compressionBottomY, strainPanelX + panelWidth - 58, `a = ${formatNumber(flexure.a, 2)} in`)}
-      ${verticalDimension(strainPanelX + panelWidth - 80, sectionTop, neutralAxisY, strainPanelX + panelWidth - 58, `c = ${formatNumber(flexure.c, 2)} in`)}
+      ${verticalDimension(strainPanelX + panelWidth - 34, sectionTop, compressionBottomY, strainPanelX + panelWidth - 58, "a")}
+      ${verticalDimension(strainPanelX + panelWidth - 80, sectionTop, neutralAxisY, strainPanelX + panelWidth - 58, "c")}
       <text x="${strainTopX - 8}" y="${sectionTop - 12}" class="drawing-label">ec = 0.003</text>
       <text x="${strainBottomX - 6}" y="${sectionBottom + 22}" class="drawing-label">et = ${formatNumber(flexure.maxTensionStrain, 5)}</text>
+      <rect x="${strainBoxX}" y="${strainBoxY}" width="${strainBoxWidth}" height="50" rx="14" class="info-box" />
+      <line x1="${strainBoxX + 70}" y1="${strainBoxY + 10}" x2="${strainBoxX + 70}" y2="${strainBoxY + 40}" class="result-divider" />
+      <text x="${strainBoxX + 16}" y="${strainBoxY + 25}" class="drawing-label drawing-label--muted">c</text>
+      <text x="${strainBoxX + 56}" y="${strainBoxY + 25}" class="drawing-label result-value">${formatNumber(flexure.c, 2)} in</text>
+      <text x="${strainBoxX + 90}" y="${strainBoxY + 25}" class="drawing-label drawing-label--muted">a</text>
+      <text x="${strainBoxX + strainBoxWidth - 14}" y="${strainBoxY + 25}" class="drawing-label result-value">${formatNumber(flexure.a, 2)} in</text>
 
       <line x1="${stressAxisX}" y1="${sectionTop}" x2="${stressAxisX}" y2="${sectionBottom}" class="stress-axis" />
       <line x1="${forceAxisX}" y1="${sectionTop}" x2="${forceAxisX}" y2="${sectionBottom}" class="stress-axis" />
@@ -189,18 +197,18 @@ export function renderFlexureDrawing(snapshot) {
       <text x="${coupleAxisX + 52}" y="${tensionResultantY + 4}" class="drawing-label">T</text>
       <text x="${coupleAxisX + 52}" y="${(compressionResultantY + tensionResultantY) / 2 + 4}" class="drawing-label">z</text>
 
-      <rect x="${resultBoxX}" y="${resultBoxY}" width="${resultBoxWidth}" height="98" rx="16" class="info-box" />
-      <line x1="${resultBoxX + 78}" y1="${resultBoxY + 14}" x2="${resultBoxX + 78}" y2="${resultBoxY + 84}" class="result-divider" />
+      <rect x="${resultBoxX}" y="${resultBoxY}" width="${resultBoxWidth}" height="104" rx="16" class="info-box" />
+      <line x1="${resultBoxX + 78}" y1="${resultBoxY + 14}" x2="${resultBoxX + 78}" y2="${resultBoxY + 90}" class="result-divider" />
       ${resultRows
         .map(
           ([label, value], index) => `
-            <text x="${resultBoxX + 16}" y="${resultBoxY + 26 + index * 18}" class="drawing-label drawing-label--muted">${label}</text>
-            <text x="${resultBoxX + resultBoxWidth - 14}" y="${resultBoxY + 26 + index * 18}" class="drawing-label result-value">${value}</text>
+            <text x="${resultBoxX + 16}" y="${resultBoxY + 28 + index * 18}" class="drawing-label drawing-label--muted">${label}</text>
+            <text x="${resultBoxX + resultBoxWidth - 14}" y="${resultBoxY + 28 + index * 18}" class="drawing-label result-value">${value}</text>
           `
         )
         .join("")}
 
-      <text x="${margin}" y="${viewHeight - 24}" class="drawing-note">The strain, stress, and resultant sketches follow the active solved section case and use the same layer depths reported in the calculation steps.</text>
+      <text x="${margin}" y="${viewHeight - 28}" class="drawing-note">The strain, stress, and resultant sketches follow the active solved section case and use the same layer depths reported in the calculation steps.</text>
     </svg>
   `;
 }

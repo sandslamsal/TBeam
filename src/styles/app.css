@@ -74,9 +74,12 @@ button {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) auto minmax(280px, 420px);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  grid-template-areas:
+    "intro status"
+    "actions status";
   gap: 22px;
-  align-items: end;
+  align-items: start;
   padding: 26px 28px;
   border: 1px solid var(--line);
   border-radius: calc(var(--radius) + 6px);
@@ -84,6 +87,11 @@ button {
     linear-gradient(180deg, rgba(255, 252, 247, 0.94), rgba(255, 252, 247, 0.86)),
     linear-gradient(120deg, rgba(198, 97, 43, 0.08), rgba(29, 107, 120, 0.06));
   box-shadow: var(--shadow);
+}
+
+.hero__intro {
+  grid-area: intro;
+  min-width: 0;
 }
 
 .eyebrow,
@@ -118,10 +126,11 @@ h1 {
 }
 
 .hero__actions {
+  grid-area: actions;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: end;
+  justify-content: start;
 }
 
 .action-button {
@@ -149,8 +158,9 @@ h1 {
 }
 
 .hero__status {
+  grid-area: status;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }
 
@@ -191,6 +201,7 @@ h1 {
 .subpanel,
 .metric-card,
 .step-card {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--paper);
@@ -270,6 +281,18 @@ details[open] > summary .accordion-chevron {
 .panel-head p,
 .subpanel p {
   margin: 0;
+}
+
+.panel-caption {
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.panel-kicker--quiet {
+  margin-bottom: 4px;
+  color: var(--teal);
+  letter-spacing: 0.14em;
 }
 
 .field-grid {
@@ -385,13 +408,16 @@ details[open] > summary .accordion-chevron {
   gap: 14px;
 }
 
-.derived-strip,
+.derived-strip {
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+}
+
 .metric-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
 }
 
 .dashboard-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .derived-strip--tall {
@@ -399,6 +425,10 @@ details[open] > summary .accordion-chevron {
 }
 
 .metric-card {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
   padding: 16px;
   background:
     linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(248, 242, 233, 0.98)),
@@ -406,20 +436,23 @@ details[open] > summary .accordion-chevron {
 }
 
 .metric-card__label {
-  margin: 0 0 10px;
-  font-size: 0.82rem;
+  margin: 0;
+  font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--muted);
 }
 
 .metric-card__value {
-  font-size: 1.55rem;
+  font-size: clamp(1.14rem, 0.9vw + 0.82rem, 1.42rem);
   font-weight: 700;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
 }
 
 .metric-card__note {
-  margin: 8px 0 0;
+  margin: 0;
+  font-size: 0.92rem;
   color: var(--muted);
   line-height: 1.45;
 }
@@ -480,11 +513,11 @@ details[open] > summary .accordion-chevron {
 
 .analysis-grid,
 .report-preview-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .steps-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
 .equation-stack .equation-block,
@@ -518,6 +551,8 @@ details[open] > summary .accordion-chevron {
 .kv-row {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
   gap: 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
@@ -525,6 +560,13 @@ details[open] > summary .accordion-chevron {
 
 .kv-row span {
   color: var(--muted);
+}
+
+.kv-row strong {
+  margin-left: auto;
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .drawing-grid {
@@ -598,6 +640,7 @@ details[open] > summary .accordion-chevron {
   padding: 12px 14px;
   border-radius: 16px;
   background: rgba(248, 242, 233, 0.92);
+  overflow-wrap: anywhere;
 }
 
 .workspace-panel {
@@ -610,7 +653,7 @@ details[open] > summary .accordion-chevron {
 
 .layer-schedule-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   margin-top: 18px;
 }
@@ -983,12 +1026,6 @@ details[open] > summary .accordion-chevron {
   }
 
   .hero__status,
-  .derived-strip,
-  .metric-grid,
-  .dashboard-grid,
-  .analysis-grid,
-  .report-preview-grid,
-  .steps-grid,
   .layer-schedule-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1018,6 +1055,17 @@ details[open] > summary .accordion-chevron {
   .top-figure-column {
     grid-column: 2;
     grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 1080px) {
+  .field-grid--three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-grid,
+  .derived-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

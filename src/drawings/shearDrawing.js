@@ -29,6 +29,14 @@ function dimensionArrow(x1, x2, y, label, extensionY) {
   `;
 }
 
+function subscriptValue(base, subscript, value, unit = "in", digits = 1) {
+  return `${base}<tspan baseline-shift="sub" font-size="75%">${subscript}</tspan> = ${formatNumber(value, digits)} ${unit}`;
+}
+
+function infoLine(x, y, base, subscript, value, unit = "in", digits = 1) {
+  return `<text x="${x}" y="${y}" class="drawing-label">${subscriptValue(base, subscript, value, unit, digits)}</text>`;
+}
+
 function leader(anchorX, anchorY, elbowX, textX, textY, label) {
   return `
     <polyline points="${anchorX},${anchorY} ${elbowX},${anchorY} ${textX},${textY - 4}" class="callout-line" />
@@ -98,13 +106,13 @@ export function renderShearDrawing(snapshot) {
       <line x1="${leftBoundaryX}" y1="${beamY}" x2="${leftBoundaryX}" y2="${beamY + beamDepth}" class="zone-divider" />
       <line x1="${rightBoundaryX}" y1="${beamY}" x2="${rightBoundaryX}" y2="${beamY + beamDepth}" class="zone-divider" />
 
-      ${dimensionArrow(cageLeft, leftBoundaryX, beamY - 78, `L_edge = ${formatNumber(edgeZoneLength, 1)} in`, beamY)}
-      ${dimensionArrow(leftBoundaryX, rightBoundaryX, beamY - 104, `L_mid = ${formatNumber(middleZoneLength, 1)} in`, beamY)}
-      ${dimensionArrow(rightBoundaryX, cageRight, beamY - 78, `L_edge = ${formatNumber(edgeZoneLength, 1)} in`, beamY)}
+      ${dimensionArrow(cageLeft, leftBoundaryX, beamY - 78, subscriptValue("L", "edge", edgeZoneLength), beamY)}
+      ${dimensionArrow(leftBoundaryX, rightBoundaryX, beamY - 104, subscriptValue("L", "mid", middleZoneLength), beamY)}
+      ${dimensionArrow(rightBoundaryX, cageRight, beamY - 78, subscriptValue("L", "edge", edgeZoneLength), beamY)}
 
-      ${dimensionArrow(cageLeft + leftPair[0] * xScale, cageLeft + leftPair[1] * xScale, beamY - 28, `s_edge = ${formatNumber(edgeSpacing, 1)} in`, beamY)}
-      ${dimensionArrow(cageLeft + midPair[0] * xScale, cageLeft + midPair[1] * xScale, beamY + beamDepth + 36, `s_mid = ${formatNumber(middleSpacing, 1)} in`, beamY + beamDepth)}
-      ${dimensionArrow(cageLeft + rightPair[0] * xScale, cageLeft + rightPair[1] * xScale, beamY - 28, `s_edge = ${formatNumber(edgeSpacing, 1)} in`, beamY)}
+      ${dimensionArrow(cageLeft + leftPair[0] * xScale, cageLeft + leftPair[1] * xScale, beamY - 28, subscriptValue("s", "edge", edgeSpacing), beamY)}
+      ${dimensionArrow(cageLeft + midPair[0] * xScale, cageLeft + midPair[1] * xScale, beamY + beamDepth + 36, subscriptValue("s", "mid", middleSpacing), beamY + beamDepth)}
+      ${dimensionArrow(cageLeft + rightPair[0] * xScale, cageLeft + rightPair[1] * xScale, beamY - 28, subscriptValue("s", "edge", edgeSpacing), beamY)}
 
       <line x1="${beamX - 34}" y1="${beamY}" x2="${beamX - 34}" y2="${beamY + dvScaled}" class="dim-arrow" marker-start="url(#dimArrowShear)" marker-end="url(#dimArrowShear)" />
       <text x="${beamX - 16}" y="${beamY + dvScaled / 2}" class="dim-text dim-text--middle">dv = ${formatNumber(shear.dv, 2)} in</text>
@@ -117,9 +125,9 @@ export function renderShearDrawing(snapshot) {
 
       <rect x="${infoBoxX}" y="${beamY}" width="184" height="${beamDepth}" rx="18" class="info-box" />
       <text x="${infoBoxX + 16}" y="${beamY + 28}" class="drawing-label">Av = ${formatNumber(reinforcement.shearArea, 2)} in^2</text>
-      <text x="${infoBoxX + 16}" y="${beamY + 52}" class="drawing-label">s_edge = ${formatNumber(edgeSpacing, 1)} in</text>
-      <text x="${infoBoxX + 16}" y="${beamY + 76}" class="drawing-label">s_mid = ${formatNumber(middleSpacing, 1)} in</text>
-      <text x="${infoBoxX + 16}" y="${beamY + 100}" class="drawing-label">L_edge = ${formatNumber(edgeZoneLength, 1)} in</text>
+      ${infoLine(infoBoxX + 16, beamY + 52, "s", "edge", edgeSpacing)}
+      ${infoLine(infoBoxX + 16, beamY + 76, "s", "mid", middleSpacing)}
+      ${infoLine(infoBoxX + 16, beamY + 100, "L", "edge", edgeZoneLength)}
       <text x="${infoBoxX + 16}" y="${beamY + 124}" class="drawing-label">beta = ${formatNumber(shear.beta, 2)}</text>
       <text x="${infoBoxX + 16}" y="${beamY + 148}" class="drawing-label">phiVn = ${formatNumber(shear.phiVn, 1)} k</text>
 
