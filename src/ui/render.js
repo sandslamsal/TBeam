@@ -472,12 +472,6 @@ export function renderApp(snapshot) {
                       ${numberField("Stirrup legs", "reinforcement.stirrupLegs", state.reinforcement.stirrupLegs, { step: "1", min: "0" })}
                       ${numberField("Stirrup spacing s (in)", "reinforcement.stirrupSpacing", state.reinforcement.stirrupSpacing)}
                     </div>
-                    <div class="field-grid field-grid--three">
-                      ${numberField("Edge zone spacing (in)", "reinforcement.edgeStirrupSpacing", state.reinforcement.edgeStirrupSpacing)}
-                      ${numberField("Middle zone spacing (in)", "reinforcement.middleStirrupSpacing", state.reinforcement.middleStirrupSpacing)}
-                      ${numberField("Edge zone length (in)", "reinforcement.edgeZoneLength", state.reinforcement.edgeZoneLength)}
-                    </div>
-                    <div class="equation-note">Edge and middle stirrup spacing affect only the shear elevation figure. Shear capacity continues to use the single design spacing ${formatNumber(state.reinforcement.stirrupSpacing, 2)} in.</div>
                   </section>
                 </div>
                 <div class="derived-strip derived-strip--tall">

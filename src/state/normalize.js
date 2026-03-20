@@ -118,18 +118,9 @@ export function normalizeState(inputState) {
   state.reinforcement.stirrupSpacing = Number(
     state.reinforcement.stirrupSpacing ?? DEFAULT_STATE.reinforcement.stirrupSpacing
   );
-  state.reinforcement.edgeStirrupSpacing = Number(
-    state.reinforcement.edgeStirrupSpacing ??
-      state.reinforcement.stirrupSpacing ??
-      DEFAULT_STATE.reinforcement.edgeStirrupSpacing
-  );
-  state.reinforcement.middleStirrupSpacing = Number(
-    state.reinforcement.middleStirrupSpacing ??
-      DEFAULT_STATE.reinforcement.middleStirrupSpacing
-  );
-  state.reinforcement.edgeZoneLength = Number(
-    state.reinforcement.edgeZoneLength ?? DEFAULT_STATE.reinforcement.edgeZoneLength
-  );
+  delete state.reinforcement.edgeStirrupSpacing;
+  delete state.reinforcement.middleStirrupSpacing;
+  delete state.reinforcement.edgeZoneLength;
   state.reinforcement.shearBeta = Number(
     state.reinforcement.shearBeta ?? DEFAULT_STATE.reinforcement.shearBeta
   );

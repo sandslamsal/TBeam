@@ -1,23 +1,13 @@
 import { formatNumber } from "../utils/format.js";
 
-function buildZonePositions(totalLength, edgeZoneLength, edgeSpacing, middleSpacing) {
-  const leftStart = Math.min(edgeSpacing, Math.max(edgeZoneLength * 0.45, edgeSpacing * 0.75));
-  const left = [];
-  for (let x = leftStart; x <= edgeZoneLength + 1e-6; x += edgeSpacing) {
-    left.push(Number(x.toFixed(3)));
+function buildStirrupPositions(totalLength, spacing) {
+  const leadIn = Math.max(spacing * 0.85, 4);
+  const positions = [];
+  for (let x = leadIn; x <= totalLength - leadIn + 1e-6; x += spacing) {
+    positions.push(Number(x.toFixed(3)));
   }
 
-  const middle = [];
-  const middleStart = edgeZoneLength + middleSpacing;
-  const middleEnd = totalLength - edgeZoneLength - 1e-6;
-  for (let x = middleStart; x < middleEnd; x += middleSpacing) {
-    middle.push(Number(x.toFixed(3)));
-  }
-
-  const right = left.map((x) => Number((totalLength - x).toFixed(3))).reverse();
-  const all = [...new Set([...left, ...middle, ...right])].sort((a, b) => a - b);
-
-  return { left, middle, right, all };
+  return positions;
 }
 
 function dimensionArrow(x1, x2, y, label, extensionY) {
@@ -29,14 +19,6 @@ function dimensionArrow(x1, x2, y, label, extensionY) {
   `;
 }
 
-function subscriptValue(base, subscript, value, unit = "in", digits = 1) {
-  return `${base}<tspan baseline-shift="sub" font-size="75%">${subscript}</tspan> = ${formatNumber(value, digits)} ${unit}`;
-}
-
-function infoLine(x, y, base, subscript, value, unit = "in", digits = 1) {
-  return `<text x="${x}" y="${y}" class="drawing-label">${subscriptValue(base, subscript, value, unit, digits)}</text>`;
-}
-
 function leader(anchorX, anchorY, elbowX, textX, textY, label) {
   return `
     <polyline points="${anchorX},${anchorY} ${elbowX},${anchorY} ${textX},${textY - 4}" class="callout-line" />
@@ -45,18 +27,15 @@ function leader(anchorX, anchorY, elbowX, textX, textY, label) {
 }
 
 export function renderShearDrawing(snapshot) {
-  const { geometry, reinforcement, shear, state } = snapshot;
-  const edgeSpacing = Math.max(1, Number(state.reinforcement.edgeStirrupSpacing) || state.reinforcement.stirrupSpacing);
-  const middleSpacing = Math.max(1, Number(state.reinforcement.middleStirrupSpacing) || state.reinforcement.stirrupSpacing);
-  const edgeZoneLength = Math.max(1, Number(state.reinforcement.edgeZoneLength) || 24);
-  const middleZoneLength = Math.max(middleSpacing * 4, edgeZoneLength * 2.5, 42);
-  const totalLength = edgeZoneLength * 2 + middleZoneLength;
-  const positions = buildZonePositions(totalLength, edgeZoneLength, edgeSpacing, middleSpacing);
+  const { geometry, shear, state } = snapshot;
+  const spacing = Math.max(1, Number(state.reinforcement.stirrupSpacing) || 1);
+  const totalLength = Math.max(spacing * 10, 96);
+  const positions = buildStirrupPositions(totalLength, spacing);
 
   const viewWidth = 1120;
-  const viewHeight = 542;
+  const viewHeight = 468;
   const beamX = 64;
-  const beamY = 208;
+  const beamY = 168;
   const beamLength = 792;
   const beamDepth = 152;
   const coverPx = Math.max(16, (geometry.cover / geometry.h) * beamDepth + 4);
@@ -65,19 +44,14 @@ export function renderShearDrawing(snapshot) {
   const cageTop = beamY + coverPx + 8;
   const cageBottom = beamY + beamDepth - coverPx - 8;
   const xScale = (cageRight - cageLeft) / totalLength;
-  const leftBoundaryX = cageLeft + edgeZoneLength * xScale;
-  const rightBoundaryX = cageRight - edgeZoneLength * xScale;
   const dvScaled = Math.min(beamDepth - 16, (shear.dv / geometry.h) * beamDepth);
-  const crackStartX = cageLeft + edgeZoneLength * xScale * 0.7;
+  const crackStartX = cageLeft + (positions[1] ?? spacing * 1.5) * xScale;
   const crackStartY = cageBottom - 4;
   const crackRun = 214;
   const crackRise = Math.min(beamDepth - 28, Math.tan((shear.thetaDeg * Math.PI) / 180) * crackRun);
-  const infoBoxX = beamX + beamLength + 28;
-  const midPair = positions.middle.length >= 2 ? positions.middle.slice(0, 2) : [edgeZoneLength, edgeZoneLength + middleSpacing];
-  const leftPair = positions.left.length >= 2 ? positions.left.slice(0, 2) : [positions.left[0] ?? edgeSpacing, (positions.left[0] ?? edgeSpacing) + edgeSpacing];
-  const rightPair = positions.right.length >= 2 ? positions.right.slice(-2) : [totalLength - edgeSpacing * 2, totalLength - edgeSpacing];
+  const spacingPair = positions.length >= 2 ? positions.slice(0, 2) : [spacing, spacing * 2];
 
-  const stirrupMarkup = positions.all
+  const stirrupMarkup = positions
     .map((position) => {
       const x = cageLeft + position * xScale;
       return `<line x1="${x}" y1="${cageTop}" x2="${x}" y2="${cageBottom}" class="stirrup-line" />`;
@@ -94,25 +68,13 @@ export function renderShearDrawing(snapshot) {
 
       <rect x="18" y="18" width="${viewWidth - 36}" height="${viewHeight - 36}" rx="20" class="drawing-frame" />
       <text x="42" y="46" class="drawing-title">Shear Reinforcement Elevation</text>
-      <text x="42" y="68" class="drawing-subtitle">Beam elevation with cover-respecting longitudinal steel, vertical stirrup lines, and symmetric edge and middle spacing regions</text>
 
       <rect x="${beamX}" y="${beamY}" width="${beamLength}" height="${beamDepth}" class="section-outline section-fill" />
-      <rect x="${cageLeft}" y="${beamY}" width="${leftBoundaryX - cageLeft}" height="${beamDepth}" class="zone-shade" />
-      <rect x="${rightBoundaryX}" y="${beamY}" width="${cageRight - rightBoundaryX}" height="${beamDepth}" class="zone-shade" />
       <line x1="${cageLeft}" y1="${cageTop}" x2="${cageRight}" y2="${cageTop}" class="rebar-line rebar-line--top" />
       <line x1="${cageLeft}" y1="${cageBottom}" x2="${cageRight}" y2="${cageBottom}" class="rebar-line rebar-line--bottom" />
       ${stirrupMarkup}
 
-      <line x1="${leftBoundaryX}" y1="${beamY}" x2="${leftBoundaryX}" y2="${beamY + beamDepth}" class="zone-divider" />
-      <line x1="${rightBoundaryX}" y1="${beamY}" x2="${rightBoundaryX}" y2="${beamY + beamDepth}" class="zone-divider" />
-
-      ${dimensionArrow(cageLeft, leftBoundaryX, beamY - 78, subscriptValue("L", "edge", edgeZoneLength), beamY)}
-      ${dimensionArrow(leftBoundaryX, rightBoundaryX, beamY - 104, subscriptValue("L", "mid", middleZoneLength), beamY)}
-      ${dimensionArrow(rightBoundaryX, cageRight, beamY - 78, subscriptValue("L", "edge", edgeZoneLength), beamY)}
-
-      ${dimensionArrow(cageLeft + leftPair[0] * xScale, cageLeft + leftPair[1] * xScale, beamY - 28, subscriptValue("s", "edge", edgeSpacing), beamY)}
-      ${dimensionArrow(cageLeft + midPair[0] * xScale, cageLeft + midPair[1] * xScale, beamY + beamDepth + 36, subscriptValue("s", "mid", middleSpacing), beamY + beamDepth)}
-      ${dimensionArrow(cageLeft + rightPair[0] * xScale, cageLeft + rightPair[1] * xScale, beamY - 28, subscriptValue("s", "edge", edgeSpacing), beamY)}
+      ${dimensionArrow(cageLeft + spacingPair[0] * xScale, cageLeft + spacingPair[1] * xScale, beamY - 34, `s = ${formatNumber(spacing, 1)} in`, beamY)}
 
       <line x1="${beamX - 34}" y1="${beamY}" x2="${beamX - 34}" y2="${beamY + dvScaled}" class="dim-arrow" marker-start="url(#dimArrowShear)" marker-end="url(#dimArrowShear)" />
       <text x="${beamX - 16}" y="${beamY + dvScaled / 2}" class="dim-text dim-text--middle">dv = ${formatNumber(shear.dv, 2)} in</text>
@@ -122,16 +84,6 @@ export function renderShearDrawing(snapshot) {
 
       ${leader(cageLeft + 18, cageTop, beamX + 16, beamX + 18, beamY - 12, "Compression face")}
       ${leader(cageLeft + 42, cageBottom, beamX + 34, beamX + 18, beamY + beamDepth + 28, "Longitudinal tension steel")}
-
-      <rect x="${infoBoxX}" y="${beamY}" width="184" height="${beamDepth}" rx="18" class="info-box" />
-      <text x="${infoBoxX + 16}" y="${beamY + 28}" class="drawing-label">Av = ${formatNumber(reinforcement.shearArea, 2)} in^2</text>
-      ${infoLine(infoBoxX + 16, beamY + 52, "s", "edge", edgeSpacing)}
-      ${infoLine(infoBoxX + 16, beamY + 76, "s", "mid", middleSpacing)}
-      ${infoLine(infoBoxX + 16, beamY + 100, "L", "edge", edgeZoneLength)}
-      <text x="${infoBoxX + 16}" y="${beamY + 124}" class="drawing-label">beta = ${formatNumber(shear.beta, 2)}</text>
-      <text x="${infoBoxX + 16}" y="${beamY + 148}" class="drawing-label">phiVn = ${formatNumber(shear.phiVn, 1)} k</text>
-
-      <text x="42" y="${viewHeight - 24}" class="drawing-note">The edge and middle spacing regions are figure-only detailing controls; the shear-capacity calculation continues to use the governing design spacing input.</text>
     </svg>
   `;
 }
