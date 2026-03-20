@@ -34,10 +34,18 @@ export function renderShearDrawing(snapshot) {
 
   const viewWidth = 1120;
   const viewHeight = 468;
-  const beamX = 64;
-  const beamY = 168;
+  const frameInset = 18;
+  const titleY = 46;
+  const contentLeft = frameInset + 42;
+  const contentRight = viewWidth - frameInset - 42;
+  const contentTop = titleY + 54;
+  const contentBottom = viewHeight - frameInset - 24;
   const beamLength = 792;
   const beamDepth = 152;
+  const drawingWidth = beamLength + 34;
+  const drawingHeight = 34 + beamDepth + 28;
+  const beamX = contentLeft + (contentRight - contentLeft - drawingWidth) / 2 + 34;
+  const beamY = contentTop + (contentBottom - contentTop - drawingHeight) / 2 + 34;
   const coverPx = Math.max(16, (geometry.cover / geometry.h) * beamDepth + 4);
   const cageLeft = beamX + coverPx + 10;
   const cageRight = beamX + beamLength - coverPx - 10;
@@ -66,7 +74,7 @@ export function renderShearDrawing(snapshot) {
         </marker>
       </defs>
 
-      <rect x="18" y="18" width="${viewWidth - 36}" height="${viewHeight - 36}" rx="20" class="drawing-frame" />
+      <rect x="${frameInset}" y="${frameInset}" width="${viewWidth - frameInset * 2}" height="${viewHeight - frameInset * 2}" rx="20" class="drawing-frame" />
       <text x="42" y="46" class="drawing-title">Shear Reinforcement Elevation</text>
 
       <rect x="${beamX}" y="${beamY}" width="${beamLength}" height="${beamDepth}" class="section-outline section-fill" />
